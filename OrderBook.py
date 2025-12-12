@@ -18,14 +18,6 @@ class OrderBook:
             "limit": LimitOrderMatcher()
         }
 
-    def _add_to_book(self, order):
-        if order.side == "buy":
-            self.bids[order.price].append(order)
-            heapq.heappush(self.best_bids, -order.price)
-        else:
-            self.asks[order.price].append(order)
-            heapq.heappush(self.best_asks, order.price)
-
     def add_order(self, order_type, side, qty, price=None):
         oid = next(self.order_id_counter)
         # create order object
@@ -73,7 +65,8 @@ class OrderBook:
         try:
             queue.remove(order)
         except ValueError:
-            pass            # Handle this error more gracefully plsssss
+            print(f"[WARN] Order {order_id} not found inside its price level queue.")
+            return False
 
         if not queue:
             if order.is_buy_order():
