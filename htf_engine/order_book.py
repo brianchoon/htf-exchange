@@ -2,7 +2,9 @@ from collections import defaultdict, deque
 import heapq
 import itertools
 from .matchers.limit_matcher import LimitOrderMatcher
+from .matchers.market_matcher import MarketOrderMatcher
 from .orders.limit_order import LimitOrder
+from .orders.market_order import MarketOrder
 
 
 class OrderBook:
@@ -16,7 +18,8 @@ class OrderBook:
         self.last_price = None
 
         self.matchers = {
-            "limit": LimitOrderMatcher()
+            "limit": LimitOrderMatcher(),
+            "market": MarketOrderMatcher()
         }
 
     def add_order(self, order_type, side, qty, price=None):
@@ -24,8 +27,8 @@ class OrderBook:
         # create order object
         if order_type == "limit":
             order = LimitOrder(oid, side, price, qty)
-        # elif order_type == "market":
-        #     TODO
+        elif order_type == "market":
+            order = MarketOrder(oid, side, qty)
         # elif order_type == "ioc":
         #     TODO
         # elif order_type == "fok":

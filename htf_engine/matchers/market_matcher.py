@@ -2,21 +2,17 @@ import heapq
 from .matcher import Matcher
 
 
-class LimitOrderMatcher(Matcher):
+class MarketOrderMatcher(Matcher):
     def match(self, order_book, order):
         if order.is_buy_order():
             best_prices_heap = order_book.best_asks
             book = order_book.asks
-            price_cmp = lambda best_price: best_price <= order.price
         else:
             best_prices_heap = order_book.best_bids
             book = order_book.bids
-            price_cmp = lambda best_price: best_price >= order.price
 
         while order.qty > 0 and best_prices_heap:
             best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
-            if not price_cmp(best_price):
-                break
 
             resting_order = book[best_price][0]  # first order in deque
             traded_qty = min(order.qty, resting_order.qty)
