@@ -162,3 +162,12 @@ ob.add_order("limit", "sell", 10, 50)
 ob.add_order("limit", "sell", 10, 80)  # last fill empties buy side
 print(ob)
 print(ob.last_price)
+
+
+print("\n=== Test 16: Large imbalance with same price ===")
+ob = OrderBook()
+ob.add_order("limit", "buy", 10, 100)
+ob.add_order("limit", "buy", 10, 100)
+ob.add_order("limit", "buy", 10, 100)
+ob.add_order("limit", "sell", 100, 100)  # Should clear all bids
+print(ob)

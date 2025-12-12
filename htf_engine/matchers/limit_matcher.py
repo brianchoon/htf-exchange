@@ -17,6 +17,10 @@ class LimitOrderMatcher(Matcher):
             best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
             if not price_cmp(best_price):
                 break
+            
+            if best_price not in book:
+                heapq.heappop(best_prices_heap)
+                continue
 
             resting_order = book[best_price][0]
             traded_qty = min(order.qty, resting_order.qty)
