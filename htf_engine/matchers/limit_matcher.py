@@ -6,15 +6,18 @@ class LimitOrderMatcher(Matcher):
     def match(self, order_book, order):
         if order.is_buy_order():
             best_prices_heap = order_book.best_asks
+            order_book.best_ask()
             book = order_book.asks
             price_cmp = lambda best_price: best_price <= order.price
         else:
             best_prices_heap = order_book.best_bids
+            order_book.best_bid()
             book = order_book.bids
             price_cmp = lambda best_price: best_price >= order.price
 
         while order.qty > 0 and best_prices_heap:
-            best_price = best_prices_heap[0] if order.is_buy_order() else -best_prices_heap[0]
+            order_book.clean_orders(best_prices_heap, book)
+            best_price = best_prices_heap[0][0] if order.is_buy_order() else -best_prices_heap[0][0]
             if not price_cmp(best_price):
                 break
 
