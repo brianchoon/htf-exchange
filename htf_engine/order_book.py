@@ -1,12 +1,13 @@
 from collections import defaultdict, deque
 import heapq
 import itertools
+from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
 from .matchers.market_matcher import MarketOrderMatcher
+from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
-# dirty flag oid
-# cleaning dirty flag;
+from .trades.trade_log import TradeLog
 
 # remove in (matching)
 # remove from bids
@@ -32,8 +33,11 @@ class OrderBook:
 
         self.matchers = {
             "limit": LimitOrderMatcher(),
-            "market": MarketOrderMatcher()
+            "market": MarketOrderMatcher(),
+            "ioc": IOCOrderMatcher(),
         }
+
+        self.trade_log = TradeLog()
 
     def add_order(self, order_type, side, qty, price=None):
         oid = next(self.order_id_counter)
@@ -42,23 +46,13 @@ class OrderBook:
             order = LimitOrder(oid, side, price, qty)
         elif order_type == "market":
             order = MarketOrder(oid, side, qty)
-        # elif order_type == "ioc":
-        #     TODO
+        elif order_type == "ioc":
+            order = IOCOrder(oid, side, price, qty)
         # elif order_type == "fok":
         #     TODO
 
-        # Execute matching first
+        # Execute matching
         self.matchers[order_type].match(self, order)
-
-        # Add remaining resting quantity to the book if needed (eg limit order)
-        if order_type in ("limit",) and order.qty > 0:
-            if order.is_buy_order():
-                self.bids[order.price].append(order)
-                heapq.heappush(self.best_bids, (-order.price, oid))
-            else:
-                self.asks[order.price].append(order)
-                heapq.heappush(self.best_asks, (order.price, oid))
-            self.order_map[oid] = order
 
         return oid
 
@@ -96,6 +90,15 @@ class OrderBook:
         print("Order not found!!")
         return False
 
+    def record_trade(self, price, qty, buy_order, sell_order, aggressor):
+        return self.trade_log.record(
+            price=price,
+            qty=qty,
+            buy_order_id=buy_order.order_id,
+            sell_order_id=sell_order.order_id,
+            aggressor=aggressor,
+        )
+    
     def __str__(self):
         bid_levels = sorted(self.bids.items(), key=lambda x: -x[0])
         ask_levels = sorted(self.asks.items(), key=lambda x: x[0])
