@@ -34,18 +34,8 @@ class OrderBook:
         # elif order_type == "fok":
         #     TODO
 
-        # Execute matching first
+        # Execute matching
         self.matchers[order_type].match(self, order)
-
-        # Add remaining resting quantity to the book if needed (eg limit order)
-        if order_type in ("limit",) and order.qty > 0:
-            if order.is_buy_order():
-                self.bids[order.price].append(order)
-                heapq.heappush(self.best_bids, -order.price)
-            else:
-                self.asks[order.price].append(order)
-                heapq.heappush(self.best_asks, order.price)
-            self.order_map[oid] = order
 
         return oid
 

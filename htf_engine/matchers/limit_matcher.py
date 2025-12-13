@@ -37,3 +37,12 @@ class LimitOrderMatcher(Matcher):
 
                 if not book[best_price]:  # no more orders at this price
                     del book[best_price]
+        
+        if order.qty > 0:
+            if order.is_buy_order():
+                order_book.bids[order.price].append(order)
+                heapq.heappush(order_book.best_bids, -order.price)
+            else:
+                order_book.asks[order.price].append(order)
+                heapq.heappush(order_book.best_asks, order.price)
+            order_book.order_map[order.order_id] = order
