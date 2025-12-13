@@ -1,7 +1,6 @@
 import pytest
 from htf_engine.orders.limit_order import LimitOrder
 from htf_engine.orders.market_order import MarketOrder
-from htf_engine.order_book import OrderBook
 
 class TestOrderInitialisation:
     def test_limit_order_creation(self):
@@ -37,11 +36,4 @@ class TestOrderInitialisation:
         with pytest.raises(ValueError, match="Order quantity must be > 0"):
             MarketOrder(1, "buy", -5)
 
-    def test_two_books_equal_after_same_ops(self, ob):
-        ob2 = OrderBook()
 
-        for ob in (ob, ob2):
-            ob.add_order("limit", "buy", 5, 100)
-            ob.add_order("limit", "sell", 3, 105)
-
-        assert ob == ob2

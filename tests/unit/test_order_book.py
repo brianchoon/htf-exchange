@@ -46,4 +46,34 @@ class TestOrderBookState:
     def test_get_all_pending_orders_empty(self, ob):
         """Get all pending orders from an empty order book."""
         assert ob.get_all_pending_orders() == []
+    
+    def test_noncrossing_orders_rest(self, ob):
+        """Non-crossing orders remain resting in the book."""
+        for args in [
+            ("limit", "buy", 5, 95),
+            ("limit", "buy", 3, 100),
+            ("limit", "buy", 5, 90),
+            ("limit", "sell", 4, 105),
+            ("limit", "sell", 9, 123),
+            ("limit", "sell", 2, 110),
+        ]:
+            ob.add_order(*args)
+
+        expected = OrderBook()
+        for args in [
+            ("limit", "buy", 5, 95),
+            ("limit", "buy", 3, 100),
+            ("limit", "buy", 5, 90),
+            ("limit", "sell", 4, 105),
+            ("limit", "sell", 9, 123),
+            ("limit", "sell", 2, 110),
+        ]:
+            expected.add_order(*args)
+
+        assert ob == expected
+        assert ob.best_bid() == 100
+        assert ob.best_ask() == 105
+
+    
+
 
