@@ -33,3 +33,5 @@ class TradeLog:
     def retrieve_log(self):
         return list(self.trades)        # defensive copy
     
+    def retrieve_simple_log(self):
+        return list(map(str, self.trades))
