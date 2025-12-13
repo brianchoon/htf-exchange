@@ -17,7 +17,7 @@ class OrderBook:
         self.bids = defaultdict(deque)
         self.asks = defaultdict(deque)
         self.order_map = {}
-        self.best_bids = []
+        self.best_bids = [] #  (price , oid)
         self.best_asks = []
         self.order_id_counter = itertools.count()
         self.last_price = None

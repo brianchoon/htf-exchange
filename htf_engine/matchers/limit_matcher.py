@@ -63,8 +63,8 @@ class LimitOrderMatcher(Matcher):
         if order.qty > 0:
             if order.is_buy_order():
                 order_book.bids[order.price].append(order)
-                heapq.heappush(order_book.best_bids, -order.price)
+                heapq.heappush(order_book.best_bids, (-order.price, order.order_id))
             else:
                 order_book.asks[order.price].append(order)
-                heapq.heappush(order_book.best_asks, order.price)
+                heapq.heappush(order_book.best_asks, (order.price, order.order_id))
             order_book.order_map[order.order_id] = order
