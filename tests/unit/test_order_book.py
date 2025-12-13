@@ -23,7 +23,7 @@ class TestOrderBookInitialization:
         assert (id1, id2, id3) == (0, 1, 2)
     
     def test_two_books_equal_after_same_ops(self, ob):
-        ob2 = OrderBook()
+        ob2 = OrderBook("NVDA")
 
         for ob in (ob, ob2):
             ob.add_order("limit", "buy", 5, 100)
@@ -59,7 +59,7 @@ class TestOrderBookState:
         ]:
             ob.add_order(*args)
 
-        expected = OrderBook()
+        expected = OrderBook("GOOG")
         for args in [
             ("limit", "buy", 5, 95),
             ("limit", "buy", 3, 100),

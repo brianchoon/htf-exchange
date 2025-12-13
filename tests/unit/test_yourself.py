@@ -27,7 +27,7 @@ class TestOwnImplementation:
         # ========================================================
         
         # This is the expected that should pass your test case
-        expected = OrderBook()
+        expected = OrderBook("GOOG")
         for args in [
             ("limit", "buy", 10, 100),
             ("limit", "buy", 10, 100),
