@@ -5,17 +5,30 @@ from .matchers.limit_matcher import LimitOrderMatcher
 from .matchers.market_matcher import MarketOrderMatcher
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
+# dirty flag oid
+# cleaning dirty flag;
 
+# remove in (matching)
+# remove from bids
+# remove from asks
 
+# remove in best_bid() and best_ask()
+# remove from best_bids
+# remove from best_ask
+# remove in order_map
+
+# further optimization
+# somehow remove the cancelled trades from the set
 class OrderBook:
     def __init__(self):
-        self.bids = defaultdict(deque)
+        self.bids = defaultdict(deque) # {order price: deque[order....] }
         self.asks = defaultdict(deque)
-        self.order_map = {}
-        self.best_bids = []
-        self.best_asks = []
+        self.order_map = {} # {oid: order}
+        self.best_bids = [] # (order price, oid)
+        self.best_asks = [] # (order price, oid)
         self.order_id_counter = itertools.count()
         self.last_price = None
+        self.cancelled_orders = set()
 
         self.matchers = {
             "limit": LimitOrderMatcher(),
@@ -41,47 +54,47 @@ class OrderBook:
         if order_type in ("limit",) and order.qty > 0:
             if order.is_buy_order():
                 self.bids[order.price].append(order)
-                heapq.heappush(self.best_bids, -order.price)
+                heapq.heappush(self.best_bids, (-order.price, oid))
             else:
                 self.asks[order.price].append(order)
-                heapq.heappush(self.best_asks, order.price)
+                heapq.heappush(self.best_asks, (order.price, oid))
             self.order_map[oid] = order
 
         return oid
 
+    def clean_orders_in_heap(self, order_heap):
+        while order_heap and order_heap[0][1] in self.cancelled_orders:
+            oid_to_clean = order_heap[0][1]
+            if oid_to_clean in self.order_map:
+                del self.order_map[oid_to_clean]
+            heapq.heappop(order_heap)
+
+    def clean_orders_in_queue(self, order_queue):
+        while order_queue and order_queue[0].order_id in self.cancelled_orders:
+            oid_to_clean = order_queue[0].order_id
+            if oid_to_clean in self.order_map:
+                del self.order_map[oid_to_clean]
+            order_queue.popleft()
+
+
     def best_bid(self):
-        return -self.best_bids[0] if self.best_bids else None
+        self.clean_orders_in_heap(self.best_bids)
+        return -self.best_bids[0][0] if self.best_bids else None
 
     def best_ask(self):
-        return self.best_asks[0] if self.best_asks else None
+        # clear dirty flagged values
+        self.clean_orders_in_heap(self.best_asks)
+        return self.best_asks[0][0] if self.best_asks else None
 
     def get_all_pending_orders(self):
-        return list(map(str, self.order_map.values()))
+        return [str(v) for v in self.order_map.values() if v not in self.cancelled_orders]
 
     def cancel_order(self, order_id):
-        if order_id not in self.order_map:
-            print("Order not found!!")
-            return False
-
-        order = self.order_map[order_id]
-        queue = self.bids[order.price] if order.is_buy_order() else self.asks[order.price]
-
-        try:
-            queue.remove(order)
-        except ValueError:
-            print(f"[WARN] Order {order_id} not found inside its price level queue.")
-            return False
-
-        if not queue:
-            if order.is_buy_order():
-                self.best_bids.remove(-order.price)
-                heapq.heapify(self.best_bids)
-            else:
-                self.best_asks.remove(order.price)
-                heapq.heapify(self.best_asks)
-
-        del self.order_map[order_id]
-        return True
+        if order_id in self.order_map:
+            self.cancelled_orders.add(order_id)
+            return True
+        print("Order not found!!")
+        return False
 
     def __str__(self):
         bid_levels = sorted(self.bids.items(), key=lambda x: -x[0])
