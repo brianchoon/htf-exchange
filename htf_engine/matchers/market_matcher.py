@@ -21,6 +21,24 @@ class MarketOrderMatcher(Matcher):
             resting_order.qty -= traded_qty
 
             trade_price = resting_order.price
+
+            if order.is_buy_order():
+                order_book.record_trade(
+                    price=best_price,
+                    qty=traded_qty,
+                    buy_order=order,
+                    sell_order=resting_order,
+                    aggressor="buy",
+                )
+            else:
+                order_book.record_trade(
+                    price=best_price,
+                    qty=traded_qty,
+                    buy_order=resting_order,
+                    sell_order=order,
+                    aggressor="sell",
+                )
+                
             print(f"TRADE {traded_qty} @ {trade_price}")
             order_book.last_price = trade_price
 
@@ -34,3 +52,7 @@ class MarketOrderMatcher(Matcher):
 
                 if not book[best_price]:  # no more orders at this price
                     del book[best_price]
+            
+        # must remove any extra from user's positions
+        if order.qty > 0:
+            order_book.cleanup_discarded_order(order)

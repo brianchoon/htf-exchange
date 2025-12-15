@@ -35,6 +35,7 @@ class OrderBook:
 
         self.trade_log = TradeLog()
         self.on_trade_callback = None  # Exchange handler!!
+        self.cleanup_discarded_order_callback = None
 
     def add_order(self, order_type, side, qty, price=None, user_id=None):
         order_count = next(self.order_counter)
@@ -82,7 +83,6 @@ class OrderBook:
 
         print("No change to order!")
         return order_id
-
 
 
 
@@ -134,6 +134,10 @@ class OrderBook:
             self.on_trade_callback(trade)  # Notify Exchange
         
         return trade
+
+    def cleanup_discarded_order(self, order):
+        if self.cleanup_discarded_order_callback:
+            self.cleanup_discarded_order_callback(order)
     
     def __str__(self):
         bid_levels = sorted(self.bids.items(), key=lambda x: -x[0])

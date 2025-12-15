@@ -14,6 +14,7 @@ class Exchange:
     def add_order_book(self, instrument, ob: OrderBook):
         self.order_books[instrument] = ob
         ob.on_trade_callback = lambda trade, ob=ob: self.process_trade(trade, ob.instrument)
+        ob.cleanup_discarded_order_callback = lambda order, ob=ob: self.cleanup_discarded_order(order, ob.instrument)
 
     def place_order(self, user: User, instrument, order_type, side, qty, price=None):
         if instrument not in self.order_books:
@@ -28,7 +29,7 @@ class Exchange:
             raise ValueError(f"Instrument '{instrument}' does not exist.")
         
         ob = self.order_books[instrument]
-        
+
         if order_id not in ob.order_map:
             print("Order not found in order book!")
             return False
@@ -37,9 +38,9 @@ class Exchange:
         
         # Remove from user's outstanding
         if order.side == "buy":
-            user.outstanding_buy[instrument] -= order.qty
+            user.outstanding_buys[instrument] -= order.qty
         else:
-            user.outstanding_sell[instrument] -= order.qty
+            user.outstanding_sells[instrument] -= order.qty
         
         # Cancel in order book
         return ob.cancel_order(order_id)
@@ -52,3 +53,17 @@ class Exchange:
             buy_user.update_positions(trade, instrument)
         if sell_user:
             sell_user.update_positions(trade, instrument)
+    
+    def cleanup_discarded_order(self, order, instrument):
+        user = self.users.get(order.user_id)
+        if order.is_buy_order():
+            outstanding_buys = user.get_outstanding_buys()
+            outstanding_buys[instrument] -= order.qty
+            if outstanding_buys[instrument] == 0:
+                outstanding_buys.pop(instrument)
+        else:
+            outstanding_sells = user.get_outstanding_sells()
+            outstanding_sells[instrument] += order.qty
+            if outstanding_sells[instrument] == 0:
+                outstanding_sells.pop(instrument)
+

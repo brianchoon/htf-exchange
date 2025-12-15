@@ -9,8 +9,8 @@ class User:
 
         self.positions = {}                         # instrument -> quantity
         self.average_cost = {}                      # instrument -> avg cost
-        self.outstanding_buy = defaultdict(int)     # instrument -> qty
-        self.outstanding_sell = defaultdict(int)    # instrument -> qty
+        self.outstanding_buys = defaultdict(int)     # instrument -> qty
+        self.outstanding_sells = defaultdict(int)    # instrument -> qty
         
         self.exchange = None  # injected later
 
@@ -23,16 +23,9 @@ class User:
         self.cash_balance -= amount
     
     def can_place_order(self, instrument, side, qty):
-        limit = 100     # TODO: change limit to be configurable
-
-        current = self.positions.get(instrument, 0)
-        outstanding_buy = self.outstanding_buy.get(instrument, 0)
-        outstanding_sell = self.outstanding_sell.get(instrument, 0)
-
-        if side == "buy":
-            return qty <= limit - current - outstanding_buy
-        else:  # sell
-            return qty <= limit + current - outstanding_sell
+        quota = self.get_remaining_quota(instrument)
+        
+        return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 
     def place_order(self, exchange, instrument, order_type, side, qty, price=None):
@@ -44,9 +37,9 @@ class User:
         
         # --- UPDATE OUTSTANDING ---
         if side == "buy":
-            self.outstanding_buy[instrument] += qty
+            self.outstanding_buys[instrument] += qty
         else:
-            self.outstanding_sell[instrument] += qty
+            self.outstanding_sells[instrument] += qty
 
         # Place order through exchange
         order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
@@ -76,7 +69,9 @@ class User:
 
         # BUY
         if trade.buy_user_id == self.user_id:
-            self.outstanding_buy[instrument] -= qty
+            self.outstanding_buys[instrument] -= qty
+            if self.outstanding_buys[instrument] == 0:
+                self.outstanding_buys.pop(instrument)
 
             if old_qty >= 0:
                 # increasing long OR opening long
@@ -93,7 +88,9 @@ class User:
 
         # SELL
         elif trade.sell_user_id == self.user_id:
-            self.outstanding_sell[instrument] -= qty
+            self.outstanding_sells[instrument] -= qty
+            if self.outstanding_sells[instrument] == 0:
+                self.outstanding_sells.pop(instrument)
 
             if old_qty <= 0:
                 # increasing short OR opening short
@@ -183,3 +180,33 @@ class User:
             total += self.get_exposure_for_instrument(inst)
         
         return total
+    
+    def get_remaining_quota(self, instrument):
+        """
+        Returns how much more the user can buy or sell for a given instrument
+        without breaching the position limit.
+
+        Returns:
+            dict: {"buy_quota": int, "sell_quota": int}
+        """
+        limit = 100  # TODO: make this configurable if needed
+
+        current = self.positions.get(instrument, 0)
+
+        outstanding_buy = self.outstanding_buys.get(instrument, 0)
+        outstanding_sell = self.outstanding_sells.get(instrument, 0)
+
+        buy_quota = limit - current - outstanding_buy
+        sell_quota = limit + current - outstanding_sell
+
+        # Ensure non-negative quotas
+        return {
+            "buy_quota": max(0, buy_quota),
+            "sell_quota": max(0, sell_quota)
+        }
+    
+    def get_outstanding_buys(self):
+        return self.outstanding_buys
+    
+    def get_outstanding_sells(self):
+        return self.outstanding_sells
