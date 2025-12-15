@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AAPL Exchange</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #fff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #555; padding: 5px; text-align: center; }
+        th { background: #333; }
+        tr:nth-child(even) { background: #2c2c2c; }
+        tr:nth-child(odd) { background: #262626; }
+        h1, h2 { color: #fff; }
+        input, select, button { margin: 3px 0; }
+        pre { background: #222; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+<h1>AAPL Exchange Dashboard</h1>
+
+<h2>Place Order</h2>
+User:
+<select id="user">
+    <option value="brian">Brian</option>
+    <option value="clemen">Clemen</option>
+    <option value="charles">Charles</option>
+    <option value="nuowen">Nuowen</option>
+    <option value="zishen">Zishen</option>
+</select><br>
+
+Order Type:
+<select id="order_type">
+    <option value="limit">limit</option>
+    <option value="market">market</option>
+    <option value="ioc">ioc</option>
+    <option value="fok">fok</option>
+</select><br>
+
+Side:
+<select id="side">
+    <option value="buy">buy</option>
+    <option value="sell">sell</option>
+</select><br>
+
+Price:
+<input id="price" value="150"><br>
+
+Qty:
+<input id="qty" value="10"><br>
+
+<button onclick="place()">Place Order</button>
+
+<h2>Order Book</h2>
+<table>
+    <thead>
+        <tr>
+            <th colspan="2">Bids</th>
+            <th colspan="2">Asks</th>
+        </tr>
+        <tr>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Quantity</th>
+        </tr>
+    </thead>
+    <tbody id="order_book_body"></tbody>
+</table>
+
+<h2>User Metrics</h2>
+<pre id="metrics"></pre>
+
+<script>
+function place() {
+    fetch("/place_order", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_id: document.getElementById("user").value,
+            instrument: "AAPL",
+            order_type: document.getElementById("order_type").value,
+            side: document.getElementById("side").value,
+            price: document.getElementById("price").value,
+            qty: document.getElementById("qty").value
+        })
+    }).then(r => r.json()).then(d => console.log(d));
+}
+
+async function refresh() {
+    try {
+        const bookRes = await fetch("/book");
+        const book = await bookRes.json();
+
+        const tbody = document.getElementById("order_book_body");
+        tbody.innerHTML = "";
+
+        // Sort levels
+        const bidLevels = book.bids.sort((a,b)=>b[0]-a[0]); // descending
+        const askLevels = book.asks.sort((a,b)=>a[0]-b[0]); // ascending
+
+        const maxLen = Math.max(bidLevels.length, askLevels.length);
+
+        for(let i=0; i<maxLen; i++){
+            const bid = bidLevels[i] || [null, []];
+            const ask = askLevels[i] || [null, []];
+
+            const bidQty = bid[1].reduce((sum,o)=>sum+o[3],0);
+            const askQty = ask[1].reduce((sum,o)=>sum+o[3],0);
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${bid[0] ?? ''}</td>
+                <td>${bidQty>0 ? bidQty : ''}</td>
+                <td>${ask[0] ?? ''}</td>
+                <td>${askQty>0 ? askQty : ''}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // User metrics
+        const user_id = document.getElementById("user").value;
+        const metricsRes = await fetch(`/positions/${user_id}`);
+        const metrics = await metricsRes.json();
+        document.getElementById("metrics").innerText = JSON.stringify(metrics, null, 2);
+
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+// Refresh every 1s
+setInterval(refresh, 1000);
+refresh();
+</script>
+</body>
+</html>

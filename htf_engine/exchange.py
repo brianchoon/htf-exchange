@@ -63,7 +63,7 @@ class Exchange:
                 outstanding_buys.pop(instrument)
         else:
             outstanding_sells = user.get_outstanding_sells()
-            outstanding_sells[instrument] += order.qty
+            outstanding_sells[instrument] -= order.qty
             if outstanding_sells[instrument] == 0:
                 outstanding_sells.pop(instrument)
 
