@@ -5,7 +5,7 @@ from htf_engine.order_book import OrderBook
 # ========================================================
 
 print("=== Test 1: Insert non-crossing orders ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 
 ob.add_order("limit", "buy", 5, 95)
 ob.add_order("limit", "buy", 3, 100)
@@ -20,7 +20,7 @@ print(ob)
 
 
 print("\n=== Test 2: Add crossing buy order ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 5, 100)
 ob.add_order("limit", "buy", 3, 99)
 ob.add_order("limit", "sell", 4, 105)
@@ -33,7 +33,7 @@ print(ob)
 
 
 print("\n=== Test 3: FIFO same-price queue ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 5, 100)
 ob.add_order("limit", "buy", 50, 100)
 ob.add_order("limit", "sell", 10, 105)
@@ -50,7 +50,7 @@ print(ob)
 
 
 print("\n=== Test 4: Cancel order ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 target = ob.add_order("limit", "buy", 5, 100)
 ob.add_order("limit", "buy", 50, 100)
 print("Before cancel:", ob.get_all_pending_orders())
@@ -64,7 +64,7 @@ print("After cancel:", ob.get_all_pending_orders())
 print(ob)
 
 print("\n=== Test 4.5: Cancel order ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 target = ob.add_order("limit", "buy", 5, 100)
 print(target)
 print(ob.cancel_order(target))
@@ -75,7 +75,7 @@ print(ob.bids)
 
 
 print("\n=== Test 5: Simple partial match ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 55, 100)
 ob.add_order("limit", "sell", 40, 110)
 ob.add_order("limit", "sell", 10, 105)
@@ -84,7 +84,7 @@ print("Best ask:", ob.best_ask())
 
 
 print("\n=== Test 6: Partial fill on both sides ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "sell", 25, 100)
 print(ob.get_all_pending_orders())
@@ -92,7 +92,7 @@ print(ob)
 
 
 print("\n=== Test 7: Sweep through multiple ask levels ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "sell", 5, 101)
 ob.add_order("limit", "sell", 5, 102)
 ob.add_order("limit", "sell", 5, 103)
@@ -102,7 +102,7 @@ print("Last Traded Price:", ob.last_price)
 
 
 print("\n=== Test 8: Sweep through multiple bid levels ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 5, 99)
 ob.add_order("limit", "buy", 5, 97)
 ob.add_order("limit", "buy", 5, 98)
@@ -112,7 +112,7 @@ print("Last Traded Price:", ob.last_price)
 
 
 print("\n=== Test 9: Cancel middle of FIFO queue ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 o1 = ob.add_order("limit", "buy", 5, 100)
 o2 = ob.add_order("limit", "buy", 6, 100)
 o3 = ob.add_order("limit", "buy", 7, 100)
@@ -124,7 +124,7 @@ print(ob)
 
 
 print("\n=== Test 10: Best bid/ask when book becomes empty ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 5, 100)
 ob.add_order("limit", "sell", 5, 100)  # trades and empties book
 print("best bid:", ob.best_bid())
@@ -132,7 +132,7 @@ print("best ask:", ob.best_ask())
 
 
 print("\n=== Test 11: Stress FIFO correctness ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 for _ in range(5):
     ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "sell", 42, 100)  # should eat 4 orders fully, last partially
@@ -141,7 +141,7 @@ print(ob)
 
 
 print("\n=== Test 12: Large imbalance (big ask hits many bids) ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "buy", 10, 99)
 ob.add_order("limit", "buy", 10, 98)
@@ -150,7 +150,7 @@ print(ob)
 
 
 print("\n=== Test 13: Add then cancel everything ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 o1 = ob.add_order("limit", "sell", 10, 105)
 o2 = ob.add_order("limit", "sell", 20, 106)
 ob.cancel_order(o1)
@@ -159,7 +159,7 @@ print(ob)
 
 
 print("\n=== Test 14: Cancel non-existent order ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 o1 = ob.add_order("limit", "sell", 10, 105)
 o2 = ob.add_order("limit", "sell", 20, 106)
 ob.cancel_order("dummy")  # Order not found!
@@ -167,7 +167,7 @@ print(ob)
 
 
 print("\n=== Test 15: Multiple partials before level removed ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 30, 100)
 ob.add_order("limit", "sell", 10, 100)
 ob.add_order("limit", "sell", 10, 50)
@@ -177,7 +177,7 @@ print(ob.last_price)
 
 
 print("\n=== Test 16: Large imbalance with same price ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "buy", 10, 100)
@@ -190,7 +190,7 @@ print(ob)
 
 
 print("\n=== Test 16: Large imbalance with same price ===")
-ob = OrderBook("NVDA")
+ob = OrderBook("NVDA", enable_stp=False)
 ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "buy", 10, 100)
 ob.add_order("limit", "buy", 10, 100)

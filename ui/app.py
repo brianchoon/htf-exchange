@@ -69,7 +69,7 @@ def place_order():
     qty = int(data["qty"])
     price = data.get("price")
 
-    if price is not None:
+    if price != "":
         price = float(price)
 
     user = USERS.get(user_id)

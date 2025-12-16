@@ -19,6 +19,11 @@ class Matcher:
         - price_cmp: function to decide if a resting price can be traded
         - place_leftover_fn: function to handle leftover order if qty > 0
         """
+        if self._would_self_trade(order_book, order, price_cmp):
+            print(f"STP triggered: cancelling order {order.order_id}")
+            order_book.cleanup_discarded_order(order)
+            raise ValueError(f"STP triggered: cancelling order {order.order_id} from User {order.user_id}")
+
         if order.is_buy_order():
             best_prices_heap = order_book.best_asks
             book = order_book.asks
@@ -70,3 +75,34 @@ class Matcher:
 
         if order.qty > 0 and place_leftover_fn:
             place_leftover_fn(order_book, order)
+
+    def _would_self_trade(self, order_book, incoming_order, price_cmp):
+        if not order_book.enable_stp:
+            return False
+        
+        if incoming_order.is_buy_order():
+            if not order_book.best_asks:
+                return False
+            book = order_book.asks
+            prices = sorted(book.keys())
+        else:
+            if not order_book.best_bids:
+                return False
+            book = order_book.bids
+            prices = sorted(book.keys(), reverse=True)
+
+        remaining = incoming_order.qty
+
+        for price in prices:
+            if not price_cmp(price):
+                break
+
+            for resting in book[price]:
+                if resting.user_id == incoming_order.user_id:
+                    return True  # 🚨 STP violation
+
+                remaining -= resting.qty
+                if remaining <= 0:
+                    return False
+
+        return False

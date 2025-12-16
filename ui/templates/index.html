@@ -49,6 +49,15 @@ Qty:
 
 <button onclick="place()">Place Order</button>
 
+<h1 id="last_price_display" style="
+    text-align:center;
+    font-size:48px;
+    margin: 20px 0;
+    color: #fff;
+">
+    Share Price: —
+</h1>
+
 <h2>Order Book</h2>
 <table>
     <thead>
@@ -90,6 +99,8 @@ async function refresh() {
         const bookRes = await fetch("/book");
         const book = await bookRes.json();
 
+        document.getElementById("last_price_display").innerText = book.last_price ? `Share Price: $${book.last_price}` : "Share Price: —";
+
         const tbody = document.getElementById("order_book_body");
         tbody.innerHTML = "";
 
@@ -128,7 +139,7 @@ async function refresh() {
 }
 
 // Refresh every 0.1s
-setInterval(refresh, 100);
+setInterval(refresh, 1000);
 refresh();
 </script>
 

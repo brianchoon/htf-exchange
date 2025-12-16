@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import uuid
 
 class OrderBook:
-    def __init__(self, instrument):
+    def __init__(self, instrument, enable_stp=True):
         self.instrument = instrument
 
         self.bids = defaultdict(deque)
@@ -36,6 +36,8 @@ class OrderBook:
         self.trade_log = TradeLog()
         self.on_trade_callback = None  # Exchange handler!!
         self.cleanup_discarded_order_callback = None
+
+        self.enable_stp = enable_stp
 
     def add_order(self, order_type, side, qty, price=None, user_id=None):
         order_count = next(self.order_counter)

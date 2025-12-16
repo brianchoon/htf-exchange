@@ -22,6 +22,7 @@ class TestExchange:
         exchange.register_user(u3)
 
         ob = exchange.order_books["Stock A"]
+        assert ob.enable_stp
 
         # User 1 wants to buy 50 Stock A at $10 and sell 50 Stock A at $20
         id_user1_order1 = u1.place_order(exchange, "Stock A", "limit", "buy", 50, 10)

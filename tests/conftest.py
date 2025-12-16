@@ -5,7 +5,7 @@ from htf_engine.user import User
 
 @pytest.fixture
 def ob():
-    return OrderBook("NVDA")
+    return OrderBook("NVDA", enable_stp=False)
 
 @pytest.fixture
 def exchange():
