@@ -16,7 +16,7 @@ class FOKOrderMatcher(Matcher):
         if available_qty < order.qty:
             print(f"FOK order {order.order_id} cancelled due to insufficient liquidity")
             order_book.cleanup_discarded_order(order)
-            return
+            raise ValueError(f"Insufficient Liquidity for FOK order: cancelling order {order.order_id} from User {order.user_id}")
 
         self._execute_match(
             order_book,
