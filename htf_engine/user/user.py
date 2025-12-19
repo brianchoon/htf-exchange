@@ -1,4 +1,5 @@
 from collections import defaultdict
+from htf_engine.user.user_log import UserLog
 
 class User:
     def __init__(self, user_id, username, cash_balance=0.0):
@@ -11,11 +12,16 @@ class User:
         self.average_cost = {}                      # instrument -> avg cost
         self.outstanding_buys = defaultdict(int)     # instrument -> qty
         self.outstanding_sells = defaultdict(int)    # instrument -> qty
+
+        self.user_log = UserLog()
         
         self.exchange = None  # injected later
 
     def cash_in(self, amount):
         self.cash_balance += amount
+
+    def register(self):
+        self.user_log.record_register_user(self.user_id, self.username, self.cash_balance)
 
     def cash_out(self, amount):
         if amount > self.cash_balance:
@@ -43,6 +49,7 @@ class User:
 
         # Place order through exchange
         order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
+        self.user_log.record_place_order(self.user_id, self.username, instrument, order_type, side, qty, price)
         return order_id
 
     def cancel_order(self, order_id, instrument=None):
@@ -50,6 +57,7 @@ class User:
             raise ValueError("User is not registered with any exchange.")
         
         if instrument:
+            self.user_log.record_cancel_order(self.user_id, self.username,order_id, instrument)
             return self.exchange.cancel_order(self, instrument, order_id)
         
         # If instrument not provided, search all order books

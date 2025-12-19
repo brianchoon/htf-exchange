@@ -1,5 +1,5 @@
 from .order_book import OrderBook
-from .user import User
+from .user.user import User
 
 
 class Exchange:
@@ -7,9 +7,14 @@ class Exchange:
         self.users = {}          # user_id -> User
         self.order_books = {}    # instrument -> OrderBook
 
-    def register_user(self, user: User):
+    def register_user(self, user: User) -> bool:
+        if user.user_id in self.users:
+            return False
+
         self.users[user.user_id] = user
+        user.register()
         user.exchange = self
+        return True
 
     def add_order_book(self, instrument, ob: OrderBook):
         self.order_books[instrument] = ob
