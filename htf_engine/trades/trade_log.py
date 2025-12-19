@@ -6,7 +6,7 @@ class TradeLog:
     VALID_AGGRESSORS = {"buy", "sell"}
 
     def __init__(self):
-        self.trades = []
+        self._trades = []
 
     def record(
         self,
@@ -31,11 +31,11 @@ class TradeLog:
             sell_order_id=sell_order_id,
             aggressor=aggressor,
         )
-        self.trades.append(trade)
+        self._trades.append(trade)
         return trade
 
-    def retrieve_log(self):
-        return list(self.trades)        # defensive copy
+    def retrieve_log(self) -> tuple:
+        return tuple(self._trades)        # defensive copy
     
-    def retrieve_simple_log(self):
-        return list(map(str, self.trades))
+    def retrieve_simple_log(self) -> tuple:
+        return tuple(map(str, self._trades))
