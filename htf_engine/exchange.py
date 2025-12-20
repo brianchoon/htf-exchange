@@ -78,3 +78,6 @@ class Exchange:
     
     def _earn_fee(self) -> None:
         self.balance += self.fee
+    
+    def change_fee(self, new_fee: int) -> None:
+        self.fee = new_fee
