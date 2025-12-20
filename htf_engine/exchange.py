@@ -14,21 +14,23 @@ class Exchange:
     def register_user(self, user: User) -> None:
         self.users[user.user_id] = user
         user.exchange = self
+        user.place_order_callback = self.place_order
+        user.cancel_order_callback = self.cancel_order
 
     def add_order_book(self, instrument: str, ob: OrderBook) -> None:
         self.order_books[instrument] = ob
         ob.on_trade_callback = lambda trade, ob=ob: self.process_trade(trade, ob.instrument)
         ob.cleanup_discarded_order_callback = lambda order, ob=ob: self.cleanup_discarded_order(order, ob.instrument)
 
-    def place_order(self, user: User, instrument:str, order_type:str, side:str, qty:int, price=None) -> str:
+    def place_order(self, user_id: str, instrument:str, order_type:str, side:str, qty:int, price=None) -> str:
         if instrument not in self.order_books:
             raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
         
         ob = self.order_books[instrument]
-        order_id = ob.add_order(order_type, side, qty, price, user_id=user.user_id)
+        order_id = ob.add_order(order_type, side, qty, price, user_id=user_id)
         return order_id
 
-    def cancel_order(self, user: User, instrument: str, order_id: str) -> bool:
+    def cancel_order(self, user_id: str, instrument: str, order_id: str) -> bool:
         if instrument not in self.order_books:
             raise ValueError(f"Instrument '{instrument}' does not exist.")
         
@@ -42,9 +44,9 @@ class Exchange:
         
         # Remove from user's outstanding
         if order.side == "buy":
-            user.reduce_outstanding_buys(instrument, order.qty)
+            self.users[user_id].reduce_outstanding_buys(instrument, order.qty)
         else:
-            user.reduce_outstanding_sells(instrument, order.qty)
+            self.users[user_id].reduce_outstanding_sells(instrument, order.qty)
         
         # Cancel in order book
         return ob.cancel_order(order_id)

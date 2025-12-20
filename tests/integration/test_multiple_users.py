@@ -25,8 +25,8 @@ class TestExchange:
         assert ob.enable_stp
 
         # User 1 wants to buy 50 Stock A at $10 and sell 50 Stock A at $20
-        id_user1_order1 = u1.place_order(exchange, "Stock A", "limit", "buy", 50, 10)
-        id_user1_order2 = u1.place_order(exchange, "Stock A", "limit", "sell", 50, 20)
+        id_user1_order1 = u1.place_order("Stock A", "limit", "buy", 50, 10)
+        id_user1_order2 = u1.place_order("Stock A", "limit", "sell", 50, 20)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 50
@@ -46,7 +46,7 @@ class TestExchange:
         assert u1.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 50 }
 
         # User 1 wants to buy more (but still within the exchange limit)
-        u1.place_order(exchange, "Stock A", "limit", "buy", 50, 10)  
+        u1.place_order("Stock A", "limit", "buy", 50, 10)  
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -66,7 +66,7 @@ class TestExchange:
         assert u1.get_remaining_quota("Stock A") == { "buy_quota": 0, "sell_quota": 50 } 
 
         # User 1 wants to sell more (but still within the exchange limit)
-        u1.place_order(exchange, "Stock A", "limit", "sell", 50, 20) 
+        u1.place_order("Stock A", "limit", "sell", 50, 20) 
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -87,7 +87,7 @@ class TestExchange:
 
         # User 1 tries to breach the limit of 100 by placing a limit buy
         with pytest.raises(ValueError, match=f"User {u1.user_id} cannot place order: would exceed position limit"):
-            u1.place_order(exchange, "Stock A", "limit", "buy", 50, 10)
+            u1.place_order("Stock A", "limit", "buy", 50, 10)
         
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -108,7 +108,7 @@ class TestExchange:
   
         # User 1 tries to breach the limit of 100 by placing a market sell
         with pytest.raises(ValueError, match=f"User {u1.user_id} cannot place order: would exceed position limit"):
-            u1.place_order(exchange, "Stock A", "market", "sell", 50, 20)
+            u1.place_order("Stock A", "market", "sell", 50, 20)
         
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -168,7 +168,7 @@ class TestExchange:
         assert u1.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 50 }
 
         # User 2 wants to sell 50 Stock A at $10, matching User 1's limit buy order
-        u2.place_order(exchange, "Stock A", "limit", "sell", 50, 10)
+        u2.place_order("Stock A", "limit", "sell", 50, 10)
         
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -197,7 +197,7 @@ class TestExchange:
         assert u2.get_remaining_quota("Stock A") == { "buy_quota": 150, "sell_quota": 50 }
 
         # User 3 wants to buy 25 Stock A at $20, matching User 1's limit sell order
-        u3.place_order(exchange, "Stock A", "limit", "buy", 25, 20)
+        u3.place_order("Stock A", "limit", "buy", 25, 20)
         
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -235,7 +235,7 @@ class TestExchange:
         assert u3.get_remaining_quota("Stock A") == { "buy_quota": 75, "sell_quota": 125 }
 
         # User 3 wants to limit buy another 15 Stock A at $22, matching User 1's limit sell order at $20
-        u3.place_order(exchange, "Stock A", "limit", "buy", 15, 22)
+        u3.place_order("Stock A", "limit", "buy", 15, 22)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -273,7 +273,7 @@ class TestExchange:
         assert u3.get_remaining_quota("Stock A") == { "buy_quota": 60, "sell_quota": 140 }
 
         # User 3 wants to market buy another 5 Stock A
-        u3.place_order(exchange, "Stock A", "market", "buy", 5)
+        u3.place_order("Stock A", "market", "buy", 5)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -311,7 +311,7 @@ class TestExchange:
         assert u3.get_remaining_quota("Stock A") == { "buy_quota": 55, "sell_quota": 145 }
 
         # User 3 wants to market buy another 20 Stock A (but remaining ask liquidity is 5 only)
-        u3.place_order(exchange, "Stock A", "market", "buy", 20)
+        u3.place_order("Stock A", "market", "buy", 20)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -350,7 +350,7 @@ class TestExchange:
 
         # User 3 tries to breach the limit of 50 by placing a limit buy
         with pytest.raises(ValueError, match=f"User {u3.user_id} cannot place order: would exceed position limit"):
-            u3.place_order(exchange, "Stock A", "limit", "buy", 75, 15)
+            u3.place_order("Stock A", "limit", "buy", 75, 15)
         
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -388,7 +388,7 @@ class TestExchange:
         assert u3.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 150 }
         
         # User 3 wants to limit sell 30 Stock A at $100
-        u3.place_order(exchange, "Stock A", "limit", "sell", 30, 100)
+        u3.place_order("Stock A", "limit", "sell", 30, 100)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -428,7 +428,7 @@ class TestExchange:
         assert u3.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 120 }
 
         # User 2 wants to limit buy another 50 Stock A at $120, matching User 3's limit sell order at $100 (but only 30 shares are transacted)
-        u2.place_order(exchange, "Stock A", "limit", "buy", 50, 120)
+        u2.place_order("Stock A", "limit", "buy", 50, 120)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0

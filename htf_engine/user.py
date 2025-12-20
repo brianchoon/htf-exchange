@@ -17,6 +17,9 @@ class User:
         
         self.exchange = None  # injected later
 
+        self.place_order_callback = None
+        self.cancel_order_callback = None
+
     def cash_in(self, amount: float) -> None:
         self._increase_cash_balance(amount)
 
@@ -31,7 +34,7 @@ class User:
         return qty <= quota["buy_quota"] if side == "buy" else qty <= quota["sell_quota"]
 
 
-    def place_order(self, exchange: str, instrument: str, order_type: str, side: str, qty: int, price: float=None) -> str:
+    def place_order(self, instrument: str, order_type: str, side: str, qty: int, price: float=None) -> str:
         """Place order via exchange; exchange returns order id."""
         
         # --- CHECK LIMIT ---
@@ -45,7 +48,7 @@ class User:
             self.increase_outstanding_sells(instrument, qty)
 
         # Place order through exchange
-        order_id = exchange.place_order(self, instrument, order_type, side, qty, price)
+        order_id = self.place_order_callback(self.user_id, instrument, order_type, side, qty, price)
         return order_id
 
     def cancel_order(self, order_id: str, instrument: str=None) -> bool:
@@ -53,12 +56,12 @@ class User:
             raise ValueError("User is not registered with any exchange.")
         
         if instrument:
-            return self.exchange.cancel_order(self, instrument, order_id)
+            return self.cancel_order_callback(self.user_id, instrument, order_id)
         
         # If instrument not provided, search all order books
         for inst, ob in self.exchange.order_books.items():
             if order_id in ob.order_map:
-                return self.exchange.cancel_order(self, inst, order_id)
+                return self.cancel_order_callback(self.user_id, inst, order_id)
         
         print("Order ID not found!")
         return False

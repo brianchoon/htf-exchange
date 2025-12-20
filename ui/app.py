@@ -79,7 +79,6 @@ def place_order():
 
     try:
         order_id = user.place_order(
-            exchange=exchange,
             instrument=instrument,
             order_type=order_type,
             side=side,
