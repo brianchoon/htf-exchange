@@ -26,7 +26,7 @@ class TestExchange:
 
         # User 1 wants to buy 50 Stock A at $10 and sell 50 Stock A at $20
         id_user1_order1 = u1.place_order("Stock A", "limit", "buy", 50, 10)
-        id_user1_order2 = u1.place_order("Stock A", "limit", "sell", 50, 20)
+        id_user1_order2 = u1.place_order("Stock A", "post-only", "sell", 50, 20)
 
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 50
@@ -390,6 +390,47 @@ class TestExchange:
         # User 3 wants to limit sell 30 Stock A at $100
         u3.place_order("Stock A", "limit", "sell", 30, 100)
 
+        bids, asks, last_price = self._nice_snapshot(ob)
+        assert bids[10] == 0
+        assert bids[20] == 0
+        assert bids[100] == 0
+        assert asks[10] == 0
+        assert asks[20] == 0
+        assert asks[100] == 30
+        assert last_price == 20     
+        assert exchange.balance == 100                
+
+        assert u1.positions == {}                   
+        assert u1.get_realised_pnl() == 500         
+        assert u1.get_unrealised_pnl() == 0         
+        assert u1.get_total_exposure() == 0
+        assert u1.get_cash_balance() == 5450
+        assert u1.get_outstanding_buys() == {}
+        assert u1.get_outstanding_sells() == {}        
+        assert u1.get_remaining_quota("Stock A") == { "buy_quota": 100, "sell_quota": 100 }
+
+        assert u2.positions == { "Stock A": -50 }
+        assert u2.get_realised_pnl() == 0             
+        assert u2.get_unrealised_pnl() == -500      
+        assert u2.get_total_exposure() == 1000   
+        assert u2.get_cash_balance() == 5490  
+        assert u2.get_outstanding_buys() == {}
+        assert u2.get_outstanding_sells() == {}
+        assert u2.get_remaining_quota("Stock A") == { "buy_quota": 150, "sell_quota": 50 }
+
+        assert u3.positions == { "Stock A": 50 }
+        assert u3.get_realised_pnl() == 0
+        assert u3.get_unrealised_pnl() == 0         
+        assert u3.get_total_exposure() == 1000     
+        assert u3.get_cash_balance() == 3960
+        assert u3.get_outstanding_buys() == {}
+        assert u3.get_outstanding_sells() == { "Stock A": 30 }
+        assert u3.get_remaining_quota("Stock A") == { "buy_quota": 50, "sell_quota": 120 }
+
+        # User 2 tries to post-only buy another 50 Stock A at $105 (but it is rejected, as it matches User 3's limit sell order at $100)
+        with pytest.raises(ValueError, match=f"Post-only buy would take liquidity"):  
+            u2.place_order("Stock A", "post-only", "buy", 50, 105)
+        
         bids, asks, last_price = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0

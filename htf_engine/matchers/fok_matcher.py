@@ -1,6 +1,4 @@
-import heapq
 from .matcher import Matcher
-
 
 
 class FOKOrderMatcher(Matcher):

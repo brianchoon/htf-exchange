@@ -1,5 +1,5 @@
-import heapq
 from .matcher import Matcher
+
 
 class MarketOrderMatcher(Matcher):
     def match(self, order_book, order) -> None:

@@ -1,18 +1,22 @@
 from collections import defaultdict, deque
+from datetime import datetime, timezone
+
+import uuid
 import heapq
 import itertools
+
 from .matchers.fok_matcher import FOKOrderMatcher
 from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
 from .matchers.market_matcher import MarketOrderMatcher
+from .matchers.post_only_matcher import PostOnlyOrderMatcher
 from .orders.fok_order import FOKOrder
 from .orders.ioc_order import IOCOrder
 from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
 from .orders.order import Order
+from .orders.post_only_order import PostOnlyOrder
 from .trades.trade_log import TradeLog
-from datetime import datetime, timezone
-import uuid
 
 class OrderBook:
     def __init__(self, instrument:str, enable_stp:bool =True):
@@ -32,6 +36,7 @@ class OrderBook:
             "ioc": IOCOrderMatcher(),
             "limit": LimitOrderMatcher(),
             "market": MarketOrderMatcher(),
+            "post-only": PostOnlyOrderMatcher(),
         }
 
         self.trade_log = TradeLog()
@@ -63,6 +68,8 @@ class OrderBook:
             order = IOCOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "fok":
             order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "post-only":
+            order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
 
         # Execute matching
         self.matchers[order_type].match(self, order)
