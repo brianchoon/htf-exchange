@@ -7,4 +7,4 @@ class RegisterUserAction(UserAction):
 
     def __str__(self):
         parent_str = super().__str__()
-        return f"{parent_str}| Current Balance: {self.user_balance}"
+        return f"{parent_str} | Current Balance: {self.user_balance}"

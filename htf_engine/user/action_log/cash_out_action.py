@@ -8,4 +8,4 @@ class CashOutAction(UserAction):
 
     def __str__(self):
         parent_str = super().__str__()
-        return f"{parent_str}| Removed: {self.amount_removed} | Current Balance: {self.curr_balance}"
+        return f"{parent_str} | Removed: {self.amount_removed} | Current Balance: {self.curr_balance}"

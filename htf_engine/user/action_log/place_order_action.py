@@ -10,6 +10,5 @@ class PlaceOrderAction(UserAction):
     price: float
 
     def __str__(self):
-        # You can extend the parent's string representation
         parent_str = super().__str__()
-        return f"{parent_str}| {self.order_type} | {self.side} | {self.quantity} | {self.price} for {self.instrument_id}"
+        return f"{parent_str} | {self.order_type} | {self.side} | {self.quantity} | {self.price} for {self.instrument_id}"

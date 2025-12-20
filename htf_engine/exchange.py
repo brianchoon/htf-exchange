@@ -2,7 +2,6 @@ from .order_book import OrderBook
 from .user.user import User
 from .orders.order import Order
 from .trades.trade import Trade
-from .user.user import User
 
 
 class Exchange:

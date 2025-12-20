@@ -10,5 +10,5 @@ class UserAction:
 
     def __str__(self):
         ts = self.timestamp.isoformat().replace("+00:00", "Z")
-        return f"{ts}| {self.user_id}| {self.username}| {self.action}"
+        return f"{ts} | {self.user_id} | {self.username} | {self.action}"
 

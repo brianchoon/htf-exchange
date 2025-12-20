@@ -1,35 +1,37 @@
 from datetime import datetime
 from typing import List
 
-from htf_engine.user.actionslogs.user_action import UserAction
-from htf_engine.user.actionslogs.register_user_action  import RegisterUserAction
-from htf_engine.user.actionslogs.cash_in_action import CashInAction
-from htf_engine.user.actionslogs.cash_out_action import CashOutAction
-from htf_engine.user.actionslogs.cancel_order_action import CancelOrderAction
-from htf_engine.user.actionslogs.place_order_action import PlaceOrderAction
+from htf_engine.user.action_log.user_action import UserAction
+from htf_engine.user.action_log.register_user_action  import RegisterUserAction
+from htf_engine.user.action_log.cash_in_action import CashInAction
+from htf_engine.user.action_log.cash_out_action import CashOutAction
+from htf_engine.user.action_log.cancel_order_action import CancelOrderAction
+from htf_engine.user.action_log.place_order_action import PlaceOrderAction
 
 class UserLog:
-    def __init__(self):
-        self.actions: List[UserAction] = []
+    def __init__(self, user_id, username):
+        self._actions: List[UserAction] = []
+        self.user_id = user_id 
+        self.username = username
 
     def _get_now(self) -> datetime:
         return datetime.now()
 
-    def record_register_user(self, user_id: int, username: str, user_balance: float):
+    def record_register_user(self, user_balance: float):
         action = RegisterUserAction(
             timestamp=self._get_now(),
-            user_id=user_id,
-            username=username,
+            user_id=self.user_id,
+            username=self.username,
             action="REGISTER",
             user_balance=user_balance
         )
-        self.actions.append(action)
+        self._actions.append(action)
 
-    def record_place_order(self, user_id: int, username: str, instrument_id: str, order_type: str, side: str, quantity: int, price: float):
+    def record_place_order(self, instrument_id: str, order_type: str, side: str, quantity: int, price: float):
         action = PlaceOrderAction(
             timestamp=self._get_now(),
-            user_id=user_id,
-            username=username,
+            user_id=self.user_id,
+            username=self.username,
             action="PLACE ORDER",
             instrument_id=instrument_id,
             order_type=order_type,
@@ -37,43 +39,48 @@ class UserLog:
             quantity=quantity,
             price=price
         )
+        self._actions.append(action)
 
 
-    def record_cash_in(self, user_id: int, username: str, amount: float, new_balance: float):
+    def record_cash_in(self, amount: float, new_balance: float):
         action = CashInAction(
             timestamp=self._get_now(),
-            user_id=user_id,
-            username=username,
-            action="CASH_IN",
+            user_id=self.user_id,
+            username=self.username,
+            action="CASH IN",
             amount_added=amount,
             curr_balance=new_balance
         )
-        self.actions.append(action)
+        self._actions.append(action)
 
-    def record_cash_out(self, user_id: int, username: str, amount: float, new_balance: float):
+    def record_cash_out(self, amount: float, new_balance: float):
         action = CashOutAction(
             timestamp=self._get_now(),
-            user_id=user_id,
-            username=username,
-            action="CASH_OUT",
+            user_id=self.user_id,
+            username=self.username,
+            action="CASH OUT",
             amount_removed=amount,
             curr_balance=new_balance
         )
-        self.actions.append(action)
+        self._actions.append(action)
 
-    def record_cancel_order(self, user_id: int, username: str, order_id: str, instrument_id: str):
+    def record_cancel_order(self, order_id: str, instrument_id: str):
         action = CancelOrderAction(
             timestamp=self._get_now(),
-            user_id=user_id,
-            username=username,
-            action="CANCEL_ORDER",
+            user_id=self.user_id,
+            username=self.username,
+            action="CANCEL ORDER",
             order_id=order_id,
             instrument_id=instrument_id
         )
-        self.actions.append(action)
+        self._actions.append(action)
 
+    def retrieve_log(self) -> tuple:
+        return tuple(self._actions)
 
+    def retrieve_simple_log(self) -> tuple:
+        return tuple(map(str, self._actions))
 
     def __str__(self):
-        """Prints the entire audit trail."""
-        return "\n".join(str(action) for action in self.actions)
+        """Prints user actions"""
+        return "\n".join(str(action) for action in self._actions)
