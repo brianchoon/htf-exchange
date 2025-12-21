@@ -236,7 +236,55 @@ class Exchange:
         return user_remaining_quota_for_inst
     
     def get_L1_data(self, user_id, inst):
-        pass
+        """
+        Level 1 (Top-of-Book) market data.
+
+        Returns best bid / best ask and last traded information
+        for a given instrument.
+
+        JSON format:
+        {
+            "instrument": str,
+            "best_bid": float | None,
+            "best_bid_qty": int | None,
+            "best_ask": float | None,
+            "best_ask_qty": int | None,
+            "last_price": float | None,
+            "last_qty": int | None,
+            "last_time": str | None
+        }
+        """
+        if user_id not in self.users:
+            raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        if inst not in self.order_books:
+            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+
+        ob = self.order_books[inst]
+
+        best_bid = ob.best_bid()
+        best_ask = ob.best_ask()
+
+        best_bid_qty = (
+            sum(o.qty for o in ob.bids[best_bid] if o.order_id not in ob.cancelled_orders)
+            if best_bid is not None else 0
+        )
+        best_ask_qty = (
+            sum(o.qty for o in ob.asks[best_ask] if o.order_id not in ob.cancelled_orders)
+            if best_ask is not None else 0
+        )
+
+        return {
+            "instrument": inst,
+            "best_bid": best_bid,
+            "best_bid_qty": best_bid_qty,
+            "best_ask": best_ask,
+            "best_ask_qty": best_ask_qty,
+            "last_price": ob.last_price,
+            "last_qty": ob.last_quantity,
+            "timestamp": ob.last_time.isoformat() if ob.last_time else None,
+        }
+        
 
     def get_L2_data(self, user_id, inst):
         pass
