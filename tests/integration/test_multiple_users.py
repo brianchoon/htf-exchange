@@ -46,14 +46,36 @@ class TestExchange:
         assert u1.get_outstanding_sells() == {}
         assert u1.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 100 }
 
-        # User 1 wants to post-only sell 50 Stock A at $20
-        id_user1_order2 = u1.place_order(inst, "post-only", "sell", 50, 20)
+        # User 1 wants to post-only sell 70 Stock A at $30
+        id_user1_order2 = u1.place_order(inst, "post-only", "sell", 70, 30)
+
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
+        assert bids[10] == 50
+        assert bids[30] == 0
+        assert asks[10] == 0
+        assert asks[30] == 70
+        assert last_price is None
+        assert last_quantity is None
+        assert exchange.balance == 0
+
+        assert u1.positions == {}
+        assert u1.get_realised_pnl() == 0
+        assert exchange.get_user_unrealised_pnl(u1.user_id) == 0
+        assert exchange.get_user_exposure(u1.user_id) == 0
+        assert u1.get_cash_balance() == 5000
+        assert u1.get_outstanding_buys() == { inst: 50 }
+        assert u1.get_outstanding_sells() == { inst: 70 }
+        assert u1.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 30 }
+
+        id_user1_order3 = exchange.modify_order(u1.user_id, inst, id_user1_order2, 50, 20)
 
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 50
         assert bids[20] == 0
+        assert bids[30] == 0
         assert asks[10] == 0
         assert asks[20] == 50
+        assert asks[30] == 0
         assert last_price is None
         assert last_quantity is None
         assert exchange.balance == 0
@@ -154,7 +176,7 @@ class TestExchange:
         assert u1.get_remaining_quota(inst) == { "buy_quota": 0, "sell_quota": 0 }
         
         # User 1 cancels the second order
-        u1.cancel_order(id_user1_order2, inst)
+        u1.cancel_order(id_user1_order3, inst)
 
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -343,8 +365,9 @@ class TestExchange:
         assert u3.get_remaining_quota(inst) == { "buy_quota": 55, "sell_quota": 145 }
 
         # User 3 wants to market buy another 20 Stock A (but remaining ask liquidity is 5 only)
+        print(exchange.order_books[inst])
         u3.place_order(inst, "market", "buy", 20)
-
+        print("labubu")
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0

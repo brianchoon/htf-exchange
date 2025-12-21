@@ -37,8 +37,11 @@ class Matcher:
             best_prices_heap = order_book.best_bids
             book = order_book.bids
 
-        while order.qty > 0 and best_prices_heap:
+        while order.qty > 0:
             order_book.clean_orders(best_prices_heap, book)
+            
+            if not best_prices_heap:
+                break
 
             best_price = best_prices_heap[0][0] if order.is_buy_order() else -best_prices_heap[0][0]
 

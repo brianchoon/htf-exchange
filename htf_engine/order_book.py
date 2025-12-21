@@ -97,8 +97,6 @@ class OrderBook:
         print("No change to order!")
         return order_id
 
-
-
     def clean_orders(self, order_heap:list, queue_dict:dict) -> None:
         while order_heap and order_heap[0][2] in self.cancelled_orders:
             if queue_dict == self.bids:
