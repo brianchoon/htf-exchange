@@ -13,7 +13,7 @@ class TestExchange:
         for price, orders in snap['asks']:
             asks[price] = sum(o[3] for o in orders)
         
-        return bids, asks, snap['last_price']
+        return bids, asks, snap['last_price'], snap['last_quantity']
         
     def test_exchange(self, exchange, u1, u2, u3):
         # Register 3 users
@@ -27,7 +27,7 @@ class TestExchange:
         # User 1 wants to limit buy 50 Stock A at $10
         id_user1_order1 = u1.place_order("Stock A", "limit", "buy", 50, 10)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 50
         assert bids[20] == 0
         assert asks[10] == 0
@@ -47,12 +47,13 @@ class TestExchange:
         # User 1 wants to post-only sell 50 Stock A at $20
         id_user1_order2 = u1.place_order("Stock A", "post-only", "sell", 50, 20)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 50
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 50
         assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -67,12 +68,13 @@ class TestExchange:
         # User 1 wants to buy more (but still within the exchange limit)
         u1.place_order("Stock A", "limit", "buy", 50, 10)  
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 50
         assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -87,12 +89,13 @@ class TestExchange:
         # User 1 wants to sell more (but still within the exchange limit)
         u1.place_order("Stock A", "limit", "sell", 50, 20) 
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 100
-        assert last_price is None 
+        assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -108,12 +111,13 @@ class TestExchange:
         with pytest.raises(ValueError, match=f"User {u1.user_id} cannot place order: would exceed position limit"):
             u1.place_order("Stock A", "limit", "buy", 50, 10)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 100
-        assert last_price is None 
+        assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -129,12 +133,13 @@ class TestExchange:
         with pytest.raises(ValueError, match=f"User {u1.user_id} cannot place order: would exceed position limit"):
             u1.place_order("Stock A", "market", "sell", 50, 20)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 100
-        assert last_price is None 
+        assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -149,12 +154,13 @@ class TestExchange:
         # User 1 cancels the second order
         u1.cancel_order(id_user1_order2, "Stock A")
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 50
         assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -169,12 +175,13 @@ class TestExchange:
         # User 1 cancels the first order
         u1.cancel_order(id_user1_order1, "Stock A")
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 50
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 50
         assert last_price is None
+        assert last_quantity is None
         assert exchange.balance == 0
 
         assert u1.positions == {}
@@ -189,12 +196,13 @@ class TestExchange:
         # User 2 wants to sell 50 Stock A at $10, matching User 1's limit buy order
         u2.place_order("Stock A", "limit", "sell", 50, 10)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 50
         assert last_price == 10
+        assert last_quantity == 50
         assert exchange.balance == 20
 
         assert u1.positions == { "Stock A": 50 }
@@ -218,12 +226,13 @@ class TestExchange:
         # User 3 wants to FOK buy 25 Stock A at $20, matching User 1's limit sell order
         u3.place_order("Stock A", "fok", "buy", 25, 20)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 25
         assert last_price == 20
+        assert last_quantity == 25
         assert exchange.balance == 40
 
         assert u1.positions == { "Stock A": 25 }
@@ -256,12 +265,13 @@ class TestExchange:
         # User 3 wants to limit buy another 15 Stock A at $22, matching User 1's limit sell order at $20
         u3.place_order("Stock A", "limit", "buy", 15, 22)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 10
         assert last_price == 20                     # The trade still goes through at $20, which is the best ask
+        assert last_quantity == 15
         assert exchange.balance == 60
 
         assert u1.positions == { "Stock A": 10 }    # User 1 sold all their shares
@@ -294,12 +304,13 @@ class TestExchange:
         # User 3 wants to market buy another 5 Stock A
         u3.place_order("Stock A", "market", "buy", 5)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 5
-        assert last_price == 20    
+        assert last_price == 20
+        assert last_quantity == 5
         assert exchange.balance == 80                 
 
         assert u1.positions == { "Stock A": 5 }     # User 1 sold 5 shares
@@ -332,12 +343,13 @@ class TestExchange:
         # User 3 wants to market buy another 20 Stock A (but remaining ask liquidity is 5 only)
         u3.place_order("Stock A", "market", "buy", 20)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 0
-        assert last_price == 20  
+        assert last_price == 20
+        assert last_quantity == 5
         assert exchange.balance == 100                   
 
         assert u1.positions == {}                   # User 1 sold all shares
@@ -371,12 +383,13 @@ class TestExchange:
         with pytest.raises(ValueError, match=f"User {u3.user_id} cannot place order: would exceed position limit"):
             u3.place_order("Stock A", "limit", "buy", 75, 15)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 0
-        assert last_price == 20     
+        assert last_price == 20
+        assert last_quantity == 5
         assert exchange.balance == 100                
 
         assert u1.positions == {}                
@@ -409,14 +422,15 @@ class TestExchange:
         # User 3 wants to limit sell 30 Stock A at $100
         u3.place_order("Stock A", "limit", "sell", 30, 100)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert bids[100] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert asks[100] == 30
-        assert last_price == 20     
+        assert last_price == 20
+        assert last_quantity == 5
         assert exchange.balance == 100                
 
         assert u1.positions == {}                   
@@ -450,14 +464,15 @@ class TestExchange:
         with pytest.raises(ValueError, match=f"Post-only buy would take liquidity"):  
             u2.place_order("Stock A", "post-only", "buy", 50, 105)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert bids[100] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert asks[100] == 30
-        assert last_price == 20     
+        assert last_price == 20
+        assert last_quantity == 5
         assert exchange.balance == 100                
 
         assert u1.positions == {}                   
@@ -491,14 +506,15 @@ class TestExchange:
         with pytest.raises(ValueError, match=f"Insufficient Liquidity for FOK order: cancelling order .* from User {u2.user_id}"):  
             u2.place_order("Stock A", "fok", "buy", 50, 101)
         
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert bids[100] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert asks[100] == 30
-        assert last_price == 20     
+        assert last_price == 20
+        assert last_quantity == 5
         assert exchange.balance == 100                
 
         assert u1.positions == {}                   
@@ -531,7 +547,7 @@ class TestExchange:
         # User 2 wants to IOC buy another 50 Stock A at $120, matching User 3's limit sell order at $100 (but only 30 shares are transacted)
         u2.place_order("Stock A", "ioc", "buy", 50, 120)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert bids[100] == 0
@@ -540,7 +556,8 @@ class TestExchange:
         assert asks[20] == 0
         assert asks[100] == 0
         assert asks[120] == 0
-        assert last_price == 100            # The trade still goes through at $100, which is the best ask 
+        assert last_price == 100            # The trade still goes through at $100, which is the best ask
+        assert last_quantity == 30
         assert exchange.balance == 120                   
 
         assert u1.positions == {}                   
@@ -573,7 +590,7 @@ class TestExchange:
         # User 1 wants to IOC buy another 25 Stock A at $500, but nothing happens as there is zero liquidity in the market
         u1.place_order("Stock A", "ioc", "buy", 25, 500)
 
-        bids, asks, last_price = self._nice_snapshot(ob)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
         assert bids[100] == 0
@@ -582,7 +599,8 @@ class TestExchange:
         assert asks[20] == 0
         assert asks[100] == 0
         assert asks[120] == 0
-        assert last_price == 100            # The trade still goes through at $100, which is the best ask 
+        assert last_price == 100
+        assert last_quantity == 30
         assert exchange.balance == 120                   
 
         assert u1.positions == {}                   
@@ -595,8 +613,8 @@ class TestExchange:
         assert u1.get_remaining_quota("Stock A") == { "buy_quota": 100, "sell_quota": 100 }
 
         assert u2.positions == { "Stock A": -20 }
-        assert u2.get_realised_pnl() == -2700       # User 2 bought 30 shares at $100 each, incurring $90 loss per share   
-        assert exchange.get_user_unrealised_pnl(u2.user_id) == -1800     # User 2 is still short -20 shares with cost basis of $10 (current price = $100)
+        assert u2.get_realised_pnl() == -2700
+        assert exchange.get_user_unrealised_pnl(u2.user_id) == -1800
         assert exchange.get_user_exposure(u2.user_id) == 2000     
         assert u2.get_cash_balance() == 2480
         assert u2.get_outstanding_buys() == {}
@@ -604,8 +622,8 @@ class TestExchange:
         assert u2.get_remaining_quota("Stock A") == { "buy_quota": 120, "sell_quota": 80 }
 
         assert u3.positions == { "Stock A": 20 }
-        assert u3.get_realised_pnl() == 2400        # User 3 sold 30 shares at $100 each, earning $80 profit per share   
-        assert exchange.get_user_unrealised_pnl(u3.user_id) == 1600      # User 3 still holds 20 shares with cost basis of $20 (current price = $100)
+        assert u3.get_realised_pnl() == 2400        
+        assert exchange.get_user_unrealised_pnl(u3.user_id) == 1600
         assert exchange.get_user_exposure(u3.user_id) == 2000 
         assert u3.get_cash_balance() == 6950  
         assert u3.get_outstanding_buys() == {}

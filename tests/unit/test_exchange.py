@@ -12,39 +12,42 @@ class TestExchange:
         for price, orders in snap['asks']:
             asks[price] = sum(o[3] for o in orders)
         
-        return bids, asks, snap['last_price']
+        return bids, asks, snap['last_price'], snap['last_quantity']
         
     def test_exchange(self, exchange, u1, u2, u3):
         assert "Stock A" in exchange.order_books
         ob_A = exchange.order_books["Stock A"]
-        bids, asks, last_price = self._nice_snapshot(ob_A)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob_A)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert last_price is None
+        assert last_quantity is None
         assert ob_A.on_trade_callback is not None
         assert ob_A.cleanup_discarded_order_callback is not None
 
         assert "Stock B" in exchange.order_books
         ob_B = exchange.order_books["Stock B"]
-        bids, asks, last_price = self._nice_snapshot(ob_B)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob_B)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert last_price is None
+        assert last_quantity is None
         assert ob_B.on_trade_callback is not None
         assert ob_B.cleanup_discarded_order_callback is not None
 
         assert "Stock C" in exchange.order_books
         ob_C = exchange.order_books["Stock C"]
-        bids, asks, last_price = self._nice_snapshot(ob_C)
+        bids, asks, last_price, last_quantity = self._nice_snapshot(ob_C)
         assert bids[10] == 0
         assert bids[20] == 0
         assert asks[10] == 0
         assert asks[20] == 0
         assert last_price is None
+        assert last_quantity is None
         assert ob_C.on_trade_callback is not None
         assert ob_C.cleanup_discarded_order_callback is not None
 

@@ -29,6 +29,8 @@ class OrderBook:
         self.best_asks = []
         self.order_counter = itertools.count()
         self.last_price = None
+        self.last_quantity = None
+        self.last_time = None
         self.cancelled_orders = set()
 
         self.matchers = {
@@ -140,6 +142,10 @@ class OrderBook:
             sell_order_id=sell_order.order_id,
             aggressor=aggressor,
         )
+
+        self.last_price = trade.price
+        self.last_quantity = trade.qty
+        self.last_time = trade.timestamp
         
         if self.on_trade_callback:
             self.on_trade_callback(trade)  # Notify Exchange
@@ -223,6 +229,7 @@ class OrderBook:
             "best_bid": self.best_bid(),
             "best_ask": self.best_ask(),
             "last_price": self.last_price,
+            "last_quantity": self.last_quantity,
         }
 
     def __eq__(self, other):

@@ -63,7 +63,6 @@ class Matcher:
                 )
 
             print(f"TRADE {traded_qty} @ {trade_price}")
-            order_book.last_price = trade_price
 
             if resting_order.qty == 0:
                 book[best_price].popleft()
