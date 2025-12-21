@@ -30,6 +30,11 @@ class OrderBook:
         self.order_counter = itertools.count()
         self.last_price = None
         self.cancelled_orders = set()
+        # stops orders 
+        # ob -> stops -> orders
+        # stop -> ob to add order
+        # stop order affect outstanding buy and sell in user 
+
 
         self.matchers = {
             "fok": FOKOrderMatcher(),
@@ -45,7 +50,7 @@ class OrderBook:
 
         self.enable_stp = enable_stp
 
-    def add_order(self, order_type:str, side:str, qty:int, price:float=None, user_id:str=None) -> str:
+    def add_order(self, order_type:str, side:str, qty:int, price:float=None, user_id:str = None) -> str:
         order_count = next(self.order_counter)
         timestamp = datetime.now(timezone.utc)
         data_string = (
@@ -70,6 +75,7 @@ class OrderBook:
             order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "post-only":
             order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
+        
 
         # Execute matching
         self.matchers[order_type].match(self, order)
