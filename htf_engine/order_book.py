@@ -109,20 +109,27 @@ class OrderBook:
         # create order object
         order: Order
 
-        if order_type == "limit" and price is not None:
-            order = LimitOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "market" and price is None:
-            order = MarketOrder(order_uuid, side, qty, user_id, timestamp)
-        elif order_type == "ioc" and price is not None:
-            order = IOCOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "fok" and price is not None:
-            order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "post-only" and price is not None:
-            order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "stop-limit" and stop_price is not None and price is not None:
-            order = StopLimitOrder(order_uuid, side, stop_price, price, qty, user_id, timestamp)
-        elif order_type == "stop-market" and stop_price is not None and price is None:
-            order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
+        if order_type == "limit":
+            if price is not None:
+                order = LimitOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "market":
+            if price is None:
+                order = MarketOrder(order_uuid, side, qty, user_id, timestamp)
+        elif order_type == "ioc":
+            if price is not None:
+                order = IOCOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "fok":
+            if price is not None:
+                order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "post-only":
+            if price is not None:
+                order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
+        elif order_type == "stop-limit":
+            if stop_price is not None and price is not None:
+                order = StopLimitOrder(order_uuid, side, stop_price, price, qty, user_id, timestamp)
+        elif order_type == "stop-market":
+            if stop_price is not None and price is None:
+                order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
         else:
             raise InvalidOrderTypeError()
 
