@@ -131,7 +131,7 @@ class OrderBook:
             if stop_price is not None and price is None:
                 order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
         else:
-            raise InvalidOrderTypeError()
+            raise InvalidOrderTypeError(order_type)
 
         # Execute matching
         self.matchers[order_type].match(self, order)
