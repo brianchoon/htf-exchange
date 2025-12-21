@@ -181,6 +181,7 @@ class OrderBook:
 
         curr_order = self.order_map[order_id]
 
+        # If the modified order is a stop order, always cancel and add new order
         if curr_order.stop: 
             self.cancel_order(curr_order.order_id)
             return self.add_order(
@@ -192,15 +193,24 @@ class OrderBook:
                 new_stop_price
             )
 
+        # If during modification, price changes or quantity increases, always cancel and add new order
         if getattr(curr_order, "price", None) != new_price or new_qty > curr_order.qty:
             self.cancelled_orders.add(order_id)
-            return self.add_order(curr_order.order_type, curr_order.side, new_qty, new_price, curr_order.user_id)
+            return self.add_order(
+                curr_order.order_type,
+                curr_order.side,
+                new_qty,
+                new_price,
+                curr_order.user_id
+            )
 
+        # If price remains unchanged and quantity decreases, just modify the existing order
         if new_qty < curr_order.qty:
             curr_order.qty = new_qty
             print("Quantity updated!")
             return curr_order.order_id
 
+        # The last case is when both price and quantity remains unchanged, hence we should do nothing
         print("No change to order!")
         return order_id
 
@@ -263,6 +273,8 @@ class OrderBook:
             aggressor=aggressor,
         )
 
+        # Updating the price, quantity and time of the last trade
+        # Should only be done when a trade goes through, since no other event can move the price
         self.last_price = trade.price
         self.last_quantity = trade.qty
         self.last_time = trade.timestamp
@@ -273,8 +285,10 @@ class OrderBook:
         return trade
 
     def cleanup_discarded_order(self, order: Order) -> None:
-        if self.cleanup_discarded_order_callback:
-            self.cleanup_discarded_order_callback(order)
+        if self.cleanup_discarded_order_callback is None:
+            raise RuntimeError("Order Book does not belong to an exchange!")
+            
+        self.cleanup_discarded_order_callback(order)
     
     def __str__(self):
         bid_levels = sorted(self.bids.items(), key=lambda x: -x[0])
@@ -355,4 +369,5 @@ class OrderBook:
     def __eq__(self, other):
         if not isinstance(other, OrderBook):
             return NotImplemented
+        
         return self.snapshot() == other.snapshot()

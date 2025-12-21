@@ -5,7 +5,8 @@ from .user_action import UserAction
 class RegisterUserAction(UserAction):
     user_balance: float
 
-    def __str__(self):
+    def __str__(self) -> str:
         parent_str = super().__str__()
         
         return f"{parent_str} | Current Balance: {self.user_balance}"
+    

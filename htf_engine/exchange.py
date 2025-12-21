@@ -51,7 +51,13 @@ class Exchange:
             raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
         
         ob = self.order_books[instrument]
-        order_id = ob.add_order(order_type, side, qty, price, user_id=user_id)
+        order_id = ob.add_order(
+            order_type=order_type,
+            side=side,
+            qty=qty,
+            price=price,
+            user_id=user_id
+        )
         return order_id
 
     def modify_order(
