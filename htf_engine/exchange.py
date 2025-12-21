@@ -11,12 +11,13 @@ class Exchange:
         self.fee = fee
         self.balance = 0
 
-    def register_user(self, user: User) -> bool:
+    def register_user(self, user: User, permission_level=1) -> bool:
         if user.user_id in self.users:
+            print(f"User {user.user_id} is already registered in exchange!")
             return False
 
         self.users[user.user_id] = user
-        user.register()
+        user.register(permission_level)
         user.place_order_callback = self.place_order
         user.cancel_order_callback = self.cancel_order
         user.modify_order_callback = self.modify_order
@@ -307,6 +308,11 @@ class Exchange:
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
         
+        user = self.users[user_id]
+
+        if user.get_permission_level() < 2:
+            raise ValueError(f"User '{user_id}' does not have access to L2 market data!")
+        
         if inst not in self.order_books:
             raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
 
@@ -391,6 +397,11 @@ class Exchange:
         """
         if user_id not in self.users:
             raise ValueError(f"User '{user_id}' is not registered with exchange.")
+        
+        user = self.users[user_id]
+
+        if user.get_permission_level() < 3:
+            raise ValueError(f"User '{user_id}' does not have access to L3 market data!")
         
         if inst not in self.order_books:
             raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
