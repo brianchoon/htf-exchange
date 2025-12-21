@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 from datetime import datetime, timezone
+from typing import Callable, Dict, Deque, List, Optional, Set, Tuple
 
 import uuid
 import heapq
@@ -16,10 +17,26 @@ from .orders.limit_order import LimitOrder
 from .orders.market_order import MarketOrder
 from .orders.order import Order
 from .orders.post_only_order import PostOnlyOrder
+from .trades.trade import Trade
 from .trades.trade_log import TradeLog
 
+
 class OrderBook:
-    def __init__(self, instrument:str, enable_stp:bool =True):
+    bids: Dict[float, Deque[Order]]
+    asks: Dict[float, Deque[Order]]
+    order_map: Dict[str, Order]
+    best_bids: List[Tuple[float, datetime, str]] 
+    best_asks: List[Tuple[float, datetime, str]]
+    last_price: Optional[float]
+    last_quantity: Optional[int]
+    last_time: Optional[str]
+    cancelled_orders: Set[str]
+
+    trade_log: TradeLog
+    on_trade_callback: Optional[Callable[[Trade], None]]
+    cleanup_discarded_order_callback: Optional[Callable[[Order], None]]
+
+    def __init__(self, instrument: str, enable_stp: bool = True):
         self.instrument = instrument
 
         self.bids = defaultdict(deque)
@@ -47,9 +64,16 @@ class OrderBook:
 
         self.enable_stp = enable_stp
 
-    def add_order(self, order_type:str, side:str, qty:int, price:float=None, user_id:str=None) -> str:
+    def add_order(
+        self,
+        order_type: str,
+        side: str,
+        qty: int,
+        price: Optional[float] = None,
+        user_id: Optional[str] = None
+    ) -> str:
         order_count = next(self.order_counter)
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %Z")
         data_string = (
             f"{order_count}|"
             f"{side}|"
@@ -61,31 +85,44 @@ class OrderBook:
         # Create a Unique ID for each order
         order_uuid = str(uuid.uuid5(uuid.NAMESPACE_OID, data_string))
 
+        if user_id is None:
+            user_id = "TESTING: NO_USER_ID"
+
         # create order object
-        if order_type == "limit":
+        order: Order
+
+        if order_type == "limit" and price is not None:
             order = LimitOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "market":
+        elif order_type == "market" and price is None:
             order = MarketOrder(order_uuid, side, qty, user_id, timestamp)
-        elif order_type == "ioc":
+        elif order_type == "ioc" and price is not None:
             order = IOCOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "fok":
+        elif order_type == "fok" and price is not None:
             order = FOKOrder(order_uuid, side, price, qty, user_id, timestamp)
-        elif order_type == "post-only":
+        elif order_type == "post-only" and price is not None:
             order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
+        else:
+            raise ValueError(f"Error: Order cannot be created")
 
         # Execute matching
         self.matchers[order_type].match(self, order)
 
         return order_uuid
 
-    def modify_order(self, order_id:str, new_qty:int, new_price:int) -> str:
+    def modify_order(
+            self,
+            order_id: str,
+            new_qty: int,
+            new_price: int
+    ) -> str:
         """Returns current order id if qty decrease and no change else new order_id"""
         if order_id not in self.order_map:
             print("Order not found!!")
             return "False"
 
         curr_order = self.order_map[order_id]
-        if curr_order.price != new_price or new_qty > curr_order.qty:
+
+        if getattr(curr_order, "price", None) != new_price or new_qty > curr_order.qty:
             self.cancelled_orders.add(order_id)
             return self.add_order(curr_order.order_type, curr_order.side, new_qty, new_price, curr_order.user_id)
 
@@ -112,11 +149,11 @@ class OrderBook:
             print(f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap")
 
 
-    def best_bid(self) -> float:
+    def best_bid(self) -> Optional[float]:
         self.clean_orders(self.best_bids, self.bids)
         return -self.best_bids[0][0] if self.best_bids else None
 
-    def best_ask(self) -> float:
+    def best_ask(self) -> Optional[float]:
         self.clean_orders(self.best_asks, self.asks)
         return self.best_asks[0][0] if self.best_asks else None
 
@@ -189,7 +226,7 @@ class OrderBook:
 
         return "\n".join(rows)
 
-    def _snapshot_side(self, side_levels: defaultdict[int, deque]) -> tuple:
+    def _snapshot_side(self, side_levels: dict[float, deque[Order]]) -> tuple:
         """
         Representation of one side (bids or asks).
         Ignores empty price levels.
