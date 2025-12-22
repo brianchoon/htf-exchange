@@ -85,6 +85,7 @@ class TestExchange:
         # u1 should fail
         with pytest.raises(PermissionDeniedError) as e1:
             exchange.get_L2_data(u1.user_id, inst)
+            
         assert str(e1.value) == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=2, actual=1)."
 
         # u2 should succeed
@@ -101,11 +102,13 @@ class TestExchange:
         # u1 fails
         with pytest.raises(PermissionDeniedError) as e1:
             exchange.get_L3_data(u1.user_id, inst)
+
         assert str(e1.value) == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=3, actual=1)."
 
         # u2 fails
         with pytest.raises(PermissionDeniedError) as e2:
             exchange.get_L3_data(u2.user_id, inst)
+
         assert str(e2.value) == "[PERMISSION_DENIED] User 'cheater6767' does not have sufficient permissions (required=3, actual=2)."
 
         # u3 succeeds

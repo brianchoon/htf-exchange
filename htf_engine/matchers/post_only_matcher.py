@@ -3,6 +3,7 @@ from .matcher import Matcher
 from typing import TYPE_CHECKING
 
 from htf_engine.errors.exchange_errors.matcher_type_mismatch_error import MatcherTypeMismatchError
+from htf_engine.errors.exchange_errors.post_only_violation_error import PostOnlyViolationError
 from htf_engine.orders.order import Order  
 from htf_engine.orders.post_only_order import PostOnlyOrder
 
@@ -25,13 +26,13 @@ class PostOnlyOrderMatcher(Matcher):
                 best_ask = order_book.best_asks[0][0]
                 if order.price >= best_ask:
                     order_book.cleanup_discarded_order(order)
-                    raise ValueError("Post-only buy would take liquidity")
+                    raise PostOnlyViolationError()
         else:
             if order_book.best_bids:
                 best_bid = -order_book.best_bids[0][0]
                 if order.price <= best_bid:
                     order_book.cleanup_discarded_order(order)
-                    raise ValueError("Post-only sell would take liquidity")
+                    raise PostOnlyViolationError()
         
         def leftover(order_book: "OrderBook", order: Order):
             if not isinstance(order, PostOnlyOrder):

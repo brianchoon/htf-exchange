@@ -1,7 +1,10 @@
 from typing import Any, Optional
 
-from .errors.exchange_errors.user_not_found_error import UserNotFoundError
+from .errors.exchange_errors.instrument_not_found_error import InstrumentNotFoundError
 from .errors.exchange_errors.permission_denied_error import PermissionDeniedError
+from .errors.exchange_errors.position_not_found_error import PositionNotFoundError
+from .errors.exchange_errors.user_not_found_error import UserNotFoundError
+
 from .order_book import OrderBook
 from .user.user import User
 from .orders.order import Order
@@ -50,7 +53,7 @@ class Exchange:
             raise UserNotFoundError(user_id)
         
         if instrument not in self.order_books:
-            raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(instrument)
         
         ob = self.order_books[instrument]
         order_id = ob.add_order(
@@ -74,7 +77,7 @@ class Exchange:
             raise UserNotFoundError(user_id)
         
         if instrument not in self.order_books: 
-            raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(instrument)
         
         ob = self.order_books[instrument]
         if order_id not in ob.order_map:
@@ -112,7 +115,7 @@ class Exchange:
             raise UserNotFoundError(user_id)
             
         if instrument not in self.order_books:
-            raise ValueError(f"Instrument '{instrument}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(instrument)
         
         ob = self.order_books[instrument]
 
@@ -146,7 +149,7 @@ class Exchange:
         user_id = order.user_id
 
         if user_id not in self.users:
-            raise ValueError(f"Fatal Error: User {user_id} not found in exchange")
+            raise UserNotFoundError(user_id)
         
         user = self.users[user_id]
 
@@ -200,12 +203,12 @@ class Exchange:
             raise UserNotFoundError(user_id)
         
         if inst not in self.order_books: 
-            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(inst)
         
         user = self.users[user_id]
 
         if inst not in user.positions:
-            raise ValueError(f"User {user.user_id} has no position in {inst}")
+            raise PositionNotFoundError(user_id=user_id, instrument=inst)
 
         ob = self.order_books.get(inst)
         if ob is None or ob.last_price is None:
@@ -238,12 +241,12 @@ class Exchange:
             raise UserNotFoundError(user_id)
         
         if inst not in self.order_books: 
-            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(inst)
         
         user = self.users[user_id]
 
         if inst not in user.positions:
-            raise ValueError(f"User {user.user_id} has no position in {inst}")
+            raise PositionNotFoundError(user_id=user_id, instrument=inst)
 
         ob = self.order_books.get(inst)
         if ob is None or ob.last_price is None:
@@ -286,7 +289,7 @@ class Exchange:
             raise UserNotFoundError(user_id)
         
         if inst not in self.order_books: 
-            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(inst)
         
         user = self.users[user_id]
 
@@ -322,7 +325,7 @@ class Exchange:
             raise UserNotFoundError(user_id)
         
         if inst not in self.order_books:
-            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(inst)
 
         ob = self.order_books[inst]
 
@@ -388,7 +391,7 @@ class Exchange:
             )
         
         if inst not in self.order_books:
-            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(inst)
 
         ob = self.order_books[inst]
 
@@ -475,7 +478,7 @@ class Exchange:
             )
         
         if inst not in self.order_books:
-            raise ValueError(f"Instrument '{inst}' does not exist in the exchange.")
+            raise InstrumentNotFoundError(inst)
 
         ob = self.order_books[inst]
 
