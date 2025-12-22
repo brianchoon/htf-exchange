@@ -283,14 +283,26 @@ class OrderBook:
 
         # Updating the price, quantity and time of the last trade
         # Should only be done when a trade goes through, since no other event can move the price
-        self.last_price = trade.price
-        self.last_quantity = trade.qty
-        self.last_time = trade.timestamp
+        self._update_last_trade_details(
+            trade.price,
+            trade.qty,
+            trade.timestamp
+        )
         
         if self.on_trade_callback:
             self.on_trade_callback(trade)  # Notify Exchange
         
         return trade
+
+    def _update_last_trade_details(
+            self,
+            price: float, 
+            quantity: int, 
+            timestamp: str
+    ) -> None:
+        self.last_price = price
+        self.last_quantity = quantity
+        self.last_time = timestamp
 
     def cleanup_discarded_order(self, order: Order) -> None:
         if self.cleanup_discarded_order_callback is None:
