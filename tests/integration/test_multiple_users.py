@@ -3,6 +3,7 @@ import pytest
 
 from htf_engine.errors.exchange_errors.fok_insufficient_liquidity_error import FOKInsufficientLiquidityError
 from htf_engine.errors.exchange_errors.post_only_violation_error import PostOnlyViolationError
+from htf_engine.errors.exchange_errors.order_exceeds_position_limit_error import OrderExceedsPositionLimitError
 
 
 class TestExchange:
@@ -163,8 +164,10 @@ class TestExchange:
         assert u1.get_remaining_quota(inst) == { "buy_quota": 0, "sell_quota": 0 }
 
         # User 1 tries to breach the limit of 100 by placing a limit buy
-        with pytest.raises(ValueError, match=f"User {u1.user_id} cannot place order: would exceed position limit"):
+        with pytest.raises(OrderExceedsPositionLimitError) as e1:
             u1.place_order(inst, "limit", "buy", 50, 10)
+
+        assert str(e1.value) == "[ORDER_EXCEEDS_POSITION_LIMIT] Rejected Order: Cannot place buy order for 50x Stock A as it exceeds the quota of 0."
         
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -185,8 +188,10 @@ class TestExchange:
         assert u1.get_remaining_quota(inst) == { "buy_quota": 0, "sell_quota": 0 }
   
         # User 1 tries to breach the limit of 100 by placing a market sell
-        with pytest.raises(ValueError, match=f"User {u1.user_id} cannot place order: would exceed position limit"):
+        with pytest.raises(OrderExceedsPositionLimitError) as e2:
             u1.place_order(inst, "market", "sell", 50, 20)
+
+        assert str(e2.value) == "[ORDER_EXCEEDS_POSITION_LIMIT] Rejected Order: Cannot place sell order for 50x Stock A as it exceeds the quota of 0."
         
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 100
@@ -435,9 +440,11 @@ class TestExchange:
         assert u3.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 150 }
 
         # User 3 tries to breach the limit of 50 by placing a limit buy
-        with pytest.raises(ValueError, match=f"User {u3.user_id} cannot place order: would exceed position limit"):
+        with pytest.raises(OrderExceedsPositionLimitError) as e3:
             u3.place_order(inst, "limit", "buy", 75, 15)
         
+        assert str(e3.value) == "[ORDER_EXCEEDS_POSITION_LIMIT] Rejected Order: Cannot place buy order for 75x Stock A as it exceeds the quota of 50."
+       
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
         assert bids[20] == 0
@@ -516,10 +523,10 @@ class TestExchange:
         assert u3.get_remaining_quota(inst) == { "buy_quota": 50, "sell_quota": 120 }
 
         # User 2 tries to post-only buy another 50 Stock A at $105 (but it is rejected, as it matches User 3's limit sell order at $100)
-        with pytest.raises(PostOnlyViolationError) as e1:
+        with pytest.raises(PostOnlyViolationError) as e4:
             u2.place_order(inst, "post-only", "buy", 50, 105)
         
-        assert str(e1.value) == "[POST_ONLY_VIOLATION] Invalid Order: Post-only order would take liquidity and was rejected."
+        assert str(e4.value) == "[POST_ONLY_VIOLATION] Rejected Order: Post-only order would take liquidity and was rejected."
        
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0
@@ -563,7 +570,7 @@ class TestExchange:
         with pytest.raises(FOKInsufficientLiquidityError) as e2:
             u2.place_order(inst, "fok", "buy", 50, 101)
         
-        assert str(e2.value) == "[FOK_INSUFFICIENT_LIQUIDITY] Invalid Order: FOK order had insufficient liquidity and was cancelled."
+        assert str(e2.value) == "[FOK_INSUFFICIENT_LIQUIDITY] Rejected Order: FOK order had insufficient liquidity and was rejected."
         
         bids, asks, last_price, last_quantity = self._nice_snapshot(ob)
         assert bids[10] == 0

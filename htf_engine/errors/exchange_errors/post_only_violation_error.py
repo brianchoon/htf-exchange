@@ -1,7 +1,7 @@
-from .invalid_order_error import InvalidOrderError
+from .rejected_order_error import RejectedOrderError
 
 
-class PostOnlyViolationError(InvalidOrderError):
+class PostOnlyViolationError(RejectedOrderError):
     error_code = "POST_ONLY_VIOLATION"
 
     def default_message(self) -> str:

@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Any, Callable, Dict, Optional
 
+from htf_engine.errors.exchange_errors.order_exceeds_position_limit_error import OrderExceedsPositionLimitError
+from htf_engine.errors.user_errors.insufficient_balance_for_withdrawal_error import InsufficientBalanceForWithdrawalError
 from htf_engine.user.user_log import UserLog
 from htf_engine.trades.trade import Trade
 
@@ -58,7 +60,11 @@ class User:
 
     def cash_out(self, amount: float) -> None:
         if amount > self.cash_balance:
-            raise ValueError("Insufficient balance")
+            raise InsufficientBalanceForWithdrawalError(
+                withdrawal_amt=amount,
+                user_cash_balance=self.cash_balance
+            )
+        
         self._decrease_cash_balance(amount)
         self.user_log.record_cash_out(amount, self.cash_balance)
     
@@ -84,7 +90,12 @@ class User:
         
         # --- CHECK LIMIT ---
         if not self._can_place_order(instrument, side, qty):
-            raise ValueError(f"User {self.user_id} cannot place order: would exceed position limit")
+            raise OrderExceedsPositionLimitError(
+                inst=instrument,
+                side=side,
+                qty=qty,
+                quota=self.get_remaining_quota(instrument)
+            )
         
         # --- UPDATE OUTSTANDING ---
         if side == "buy":

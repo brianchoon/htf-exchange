@@ -1,7 +1,7 @@
-from .invalid_order_error import InvalidOrderError
+from .rejected_order_error import RejectedOrderError
 
 
-class SelfTradePreventionError(InvalidOrderError):
+class SelfTradePreventionError(RejectedOrderError):
     error_code = "SELF_TRADE_PREVENTION"
 
     def __init__(self, order_id: str, user_id: str):
