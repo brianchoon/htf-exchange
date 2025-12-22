@@ -18,7 +18,7 @@ class TestMarketOrderMatching:
         """Market buy with insufficient ask liquidity consumes what it can and does not rest."""
         ob.add_order("limit", "sell", 5, 100)
         oid = ob.add_order("market", "buy", 10)
-        
+
         assert oid not in ob.order_map
         # All asks consumed
         assert _total_resting(ob.asks) == 0
@@ -26,7 +26,6 @@ class TestMarketOrderMatching:
 
         # Trade happened at 100
         assert ob.last_price == 100
-
 
     def test_market_sell_insufficient_liquidity_does_not_rest(self, ob):
         """Market sell with insufficient bid liquidity consumes what it can and does not rest."""
@@ -48,7 +47,7 @@ class TestMarketOrderMatching:
         assert _total_resting(ob.asks) == 0
         assert _total_resting(ob.bids) == 0
         assert ob.last_price is None
-    
+
     def test_market_buy_crosses_multiple_price_levels(self, ob):
         """Market buy sweeps multiple ask levels; remainder does not rest."""
         ob.add_order("limit", "sell", 5, 100)
@@ -70,8 +69,9 @@ class TestMarketOrderMatching:
         assert ob.last_price == 102
         # Total resting asks: 2 (at 102) + 5 (at 103) = 7
         assert _total_resting(ob.asks) == 2  # number of resting ask orders
-        assert sum(o.qty for q in ob.asks.values() for o in q) == 7  # total resting ask qty
-
+        assert (
+            sum(o.qty for q in ob.asks.values() for o in q) == 7
+        )  # total resting ask qty
 
     def test_market_sell_crosses_multiple_price_levels(self, ob):
         """Market sell sweeps multiple bid levels; remainder does not rest."""
@@ -90,5 +90,3 @@ class TestMarketOrderMatching:
         assert ob.last_price == 98
         # Total resting bid qty should be 2
         assert sum(o.qty for q in ob.bids.values() for o in q) == 2
-
-    

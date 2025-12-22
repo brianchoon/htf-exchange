@@ -23,7 +23,9 @@ class ExchangeError(Exception, ABC):
 
     def __init__(self, message: str | None = None):
         if type(self) is ExchangeError:
-            raise TypeError("ExchangeError is abstract and cannot be instantiated directly")
+            raise TypeError(
+                "ExchangeError is abstract and cannot be instantiated directly"
+            )
 
         self.message = message or self.default_message()
         super().__init__(self.message)

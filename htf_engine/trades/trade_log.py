@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from htf_engine.errors.exchange_errors.invalid_aggressor_error import InvalidAggressorError
+from htf_engine.errors.exchange_errors.invalid_aggressor_error import (
+    InvalidAggressorError,
+)
 from .trade import Trade
 
 
@@ -18,7 +20,7 @@ class TradeLog:
         sell_user_id: str,
         buy_order_id: str,
         sell_order_id: str,
-        aggressor: str
+        aggressor: str,
     ):
         if aggressor not in self.VALID_AGGRESSORS:
             raise InvalidAggressorError(aggressor=aggressor)
@@ -33,13 +35,13 @@ class TradeLog:
             sell_order_id=sell_order_id,
             aggressor=aggressor,
         )
-        
+
         self._trades.append(trade)
         return trade
 
     def retrieve_log(self) -> tuple[Trade, ...]:
-        return tuple(self._trades)        # defensive copy
-    
+        return tuple(self._trades)  # defensive copy
+
     def retrieve_simple_log(self) -> tuple[str, ...]:
         return tuple(map(str, self._trades))
 

@@ -2,6 +2,7 @@ def _total_resting(levels) -> int:
     """Total number of resting orders across all price levels."""
     return sum(len(q) for q in levels.values())
 
+
 class TestModifyOrder:
     def test_modify_one_order_price(self, ob):
         """Modify order price."""
@@ -49,9 +50,3 @@ class TestModifyOrder:
     def test_invalid_order(self, ob):
         """Invalid order."""
         assert ob.modify_order("false", 10, 100) == "False"
-
-
-
-
-
-

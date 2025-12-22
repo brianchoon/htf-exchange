@@ -97,7 +97,6 @@ class TestOrderCancellation:
         assert oid_sell not in ob.order_map
         assert _total_resting(ob.asks) == 0
 
-
     def test_cancel_does_not_affect_other_side(self, ob):
         """Canceling bids should not affect resting asks (and vice versa)."""
         bid_id = ob.add_order("limit", "buy", 10, 100)

@@ -12,4 +12,3 @@ class RejectedOrderError(ExchangeError, ABC):
 
     def header_string(self) -> str:
         return "Rejected Order: "
-    

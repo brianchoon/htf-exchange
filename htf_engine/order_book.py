@@ -30,7 +30,7 @@ class OrderBook:
     bids: Dict[float, Deque[Order]]
     asks: Dict[float, Deque[Order]]
     order_map: Dict[str, Order]
-    best_bids: List[Tuple[float, str, str]] 
+    best_bids: List[Tuple[float, str, str]]
     best_asks: List[Tuple[float, str, str]]
     last_price: Optional[float]
     last_quantity: Optional[int]
@@ -52,7 +52,7 @@ class OrderBook:
         self.bids = defaultdict(deque)
         self.asks = defaultdict(deque)
         self.order_map = {}
-        self.best_bids = [] #  (price , timestamp, uuid)
+        self.best_bids = []  #  (price , timestamp, uuid)
         self.best_asks = []
         self.order_counter = itertools.count()
         self.last_price = None
@@ -72,7 +72,7 @@ class OrderBook:
             "market": MarketOrderMatcher(),
             "post-only": PostOnlyOrderMatcher(),
             "stop-limit": StopOrderMatcher(),
-            "stop-market": StopOrderMatcher()
+            "stop-market": StopOrderMatcher(),
         }
 
         self.trade_log = TradeLog()
@@ -87,18 +87,13 @@ class OrderBook:
         side: str,
         qty: int,
         price: Optional[float] = None,
-        user_id: Optional[str] = None, 
-        stop_price: Optional[float] = None
+        user_id: Optional[str] = None,
+        stop_price: Optional[float] = None,
     ) -> str:
         order_count = next(self.order_counter)
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %Z")
         data_string = (
-            f"{order_count}|"
-            f"{side}|"
-            f"{self.instrument}|"
-            f"{price}|"
-            f"{user_id}"
-            f"{timestamp}"
+            f"{order_count}|{side}|{self.instrument}|{price}|{user_id}{timestamp}"
         )
         # Create a Unique ID for each order
         order_uuid = str(uuid.uuid5(uuid.NAMESPACE_OID, data_string))
@@ -126,10 +121,14 @@ class OrderBook:
                 order = PostOnlyOrder(order_uuid, side, price, qty, user_id, timestamp)
         elif order_type == "stop-limit":
             if stop_price is not None and price is not None:
-                order = StopLimitOrder(order_uuid, side, stop_price, price, qty, user_id, timestamp)
+                order = StopLimitOrder(
+                    order_uuid, side, stop_price, price, qty, user_id, timestamp
+                )
         elif order_type == "stop-market":
             if stop_price is not None and price is None:
-                order = StopMarketOrder(order_uuid, side, stop_price, qty, user_id, timestamp)
+                order = StopMarketOrder(
+                    order_uuid, side, stop_price, qty, user_id, timestamp
+                )
         else:
             raise InvalidOrderTypeError(order_type)
 
@@ -138,49 +137,48 @@ class OrderBook:
 
         return order_uuid
 
-    def check_stop_orders(self) -> None: 
-        if not self.last_price: 
-            return 
-        
+    def check_stop_orders(self) -> None:
+        if not self.last_price:
+            return
+
         while self.stop_bids_price and -self.stop_bids_price[0][0] <= self.last_price:
-            if self.stop_bids_price[0][2] not in self.cancelled_orders: 
+            if self.stop_bids_price[0][2] not in self.cancelled_orders:
                 order = self.stop_bids[-self.stop_bids_price[0][0]].pop()
                 self.add_order(
-                    order_type=order.underlying_order_type, 
-                    side=order.side, 
+                    order_type=order.underlying_order_type,
+                    side=order.side,
                     qty=order.qty,
-                    price=getattr(order, "price", None), 
-                    user_id=order.user_id
+                    price=getattr(order, "price", None),
+                    user_id=order.user_id,
                 )
-            else: 
+            else:
                 self.cancelled_orders.remove(self.stop_bids_price[0][2])
 
             del self.order_map[self.stop_bids_price[0][2]]
             heapq.heappop(self.stop_bids_price)
-        
+
         while self.stop_asks_price and self.stop_asks_price[0][0] >= self.last_price:
             if self.stop_asks_price[0][2] not in self.cancelled_orders:
                 order = self.stop_asks[self.stop_asks_price[0][0]].pop()
                 self.add_order(
-                    order_type=order.underlying_order_type, 
-                    side=order.side, 
+                    order_type=order.underlying_order_type,
+                    side=order.side,
                     qty=order.qty,
-                    price=getattr(order, "price", None), 
-                    user_id=order.user_id
+                    price=getattr(order, "price", None),
+                    user_id=order.user_id,
                 )
-            else: 
+            else:
                 self.cancelled_orders.remove(self.stop_asks_price[0][2])
 
             del self.order_map[self.stop_asks_price[0][2]]
             heapq.heappop(self.stop_asks_price)
 
-
     def modify_order(
         self,
         order_id: str,
         new_qty: int,
-        new_price: float, 
-        new_stop_price: Optional[float] = None
+        new_price: float,
+        new_stop_price: Optional[float] = None,
     ) -> str:
         """Returns current order id if qty decrease and no change else new order_id"""
         if order_id not in self.order_map:
@@ -190,15 +188,15 @@ class OrderBook:
         curr_order = self.order_map[order_id]
 
         # If the modified order is a stop order, always cancel and add new order
-        if curr_order.stop: 
+        if curr_order.stop:
             self.cancel_order(curr_order.order_id)
             return self.add_order(
-                curr_order.order_type, 
-                curr_order.side, 
-                new_qty, 
-                new_price, 
-                curr_order.user_id, 
-                new_stop_price
+                curr_order.order_type,
+                curr_order.side,
+                new_qty,
+                new_price,
+                curr_order.user_id,
+                new_stop_price,
             )
 
         # If during modification, price changes or quantity increases, always cancel and add new order
@@ -209,7 +207,7 @@ class OrderBook:
                 curr_order.side,
                 new_qty,
                 new_price,
-                curr_order.user_id
+                curr_order.user_id,
             )
 
         # If price remains unchanged and quantity decreases, just modify the existing order
@@ -222,54 +220,60 @@ class OrderBook:
         print("No change to order!")
         return order_id
 
-    def clean_orders(
-        self,
-        order_heap: list,
-        queue_dict: dict
-    ) -> None:
+    def clean_orders(self, order_heap: list, queue_dict: dict) -> None:
         while order_heap and order_heap[0][2] in self.cancelled_orders:
             if queue_dict == self.bids:
-                order_price, timestamp, oid_to_clean = -order_heap[0][0], order_heap[0][1], order_heap[0][2]
+                order_price, timestamp, oid_to_clean = (
+                    -order_heap[0][0],
+                    order_heap[0][1],
+                    order_heap[0][2],
+                )
             else:
                 order_price, timestamp, oid_to_clean = order_heap[0]
-            
+
             removed_order = queue_dict[order_price].popleft()
 
             if oid_to_clean in self.order_map:
                 del self.order_map[oid_to_clean]
-            
+
             heapq.heappop(order_heap)
             self.cancelled_orders.remove(oid_to_clean)
-            print(f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap")
-    
+            print(
+                f"{removed_order.order_id} removed from queue, {oid_to_clean} removed from heap"
+            )
+
     def best_bid(self) -> Optional[float]:
         self.clean_orders(self.best_bids, self.bids)
-        
+
         return -self.best_bids[0][0] if self.best_bids else None
 
     def best_ask(self) -> Optional[float]:
         self.clean_orders(self.best_asks, self.asks)
-        
+
         return self.best_asks[0][0] if self.best_asks else None
 
     def get_all_pending_orders(self) -> list[str]:
-        return [str(v) for v in self.order_map.values() if v.order_id not in self.cancelled_orders]
+        return [
+            str(v)
+            for v in self.order_map.values()
+            if v.order_id not in self.cancelled_orders
+        ]
 
     def cancel_order(self, order_id: str) -> bool:
         if order_id in self.order_map:
             self.cancelled_orders.add(order_id)
             return True
-        
+
         print("Order not found!!")
         return False
 
     def record_trade(
-            self,
-            price: float,
-            qty: int,
-            buy_order: Order,
-            sell_order: Order,
-            aggressor: str
+        self,
+        price: float,
+        qty: int,
+        buy_order: Order,
+        sell_order: Order,
+        aggressor: str,
     ) -> TradeLog:
         trade = self.trade_log.record(
             price=price,
@@ -283,22 +287,15 @@ class OrderBook:
 
         # Updating the price, quantity and time of the last trade
         # Should only be done when a trade goes through, since no other event can move the price
-        self._update_last_trade_details(
-            trade.price,
-            trade.qty,
-            trade.timestamp
-        )
-        
+        self._update_last_trade_details(trade.price, trade.qty, trade.timestamp)
+
         if self.on_trade_callback:
             self.on_trade_callback(trade)  # Notify Exchange
-        
+
         return trade
 
     def _update_last_trade_details(
-            self,
-            price: float, 
-            quantity: int, 
-            timestamp: str
+        self, price: float, quantity: int, timestamp: str
     ) -> None:
         self.last_price = price
         self.last_quantity = quantity
@@ -307,9 +304,9 @@ class OrderBook:
     def cleanup_discarded_order(self, order: Order) -> None:
         if self.cleanup_discarded_order_callback is None:
             raise RuntimeError("Order Book does not belong to an exchange!")
-            
+
         self.cleanup_discarded_order_callback(order)
-    
+
     def __str__(self):
         bid_levels = sorted(self.bids.items(), key=lambda x: -x[0])
         ask_levels = sorted(self.asks.items(), key=lambda x: x[0])
@@ -318,12 +315,16 @@ class OrderBook:
         ask_lines = []
 
         for price, orders in bid_levels:
-            total_qty = sum(o.qty for o in orders if o.order_id not in self.cancelled_orders)
+            total_qty = sum(
+                o.qty for o in orders if o.order_id not in self.cancelled_orders
+            )
             if total_qty > 0:
                 bid_lines.append(f"{price:>5} : {total_qty:<5}")
 
         for price, orders in ask_levels:
-            total_qty = sum(o.qty for o in orders if o.order_id not in self.cancelled_orders)
+            total_qty = sum(
+                o.qty for o in orders if o.order_id not in self.cancelled_orders
+            )
             if total_qty > 0:
                 ask_lines.append(f"{price:>5} : {total_qty:<5}")
 
@@ -332,9 +333,11 @@ class OrderBook:
         bid_lines += [" " * 13] * (h - len(bid_lines))
         ask_lines += [" " * 13] * (h - len(ask_lines))
 
-        rows = ["--------- ORDERBOOK ---------",
-                "     BIDS     |     ASKS     ",
-                "--------------|--------------"]
+        rows = [
+            "--------- ORDERBOOK ---------",
+            "     BIDS     |     ASKS     ",
+            "--------------|--------------",
+        ]
 
         for b, a in zip(bid_lines, ask_lines):
             rows.append(f"{b} | {a}")
@@ -360,15 +363,17 @@ class OrderBook:
             orders = []
             for o in q:
                 # capture only state that defines the book
-                if o.order_id in self.cancelled_orders:   # skip cancelled orders
+                if o.order_id in self.cancelled_orders:  # skip cancelled orders
                     continue
-                orders.append((
-                    getattr(o, "order_id", None),
-                    getattr(o, "side", None),
-                    getattr(o, "price", None),
-                    getattr(o, "qty", None),
-                    o.__class__.__name__,  # "LimitOrder", "IOCOrder", etc.
-                ))
+                orders.append(
+                    (
+                        getattr(o, "order_id", None),
+                        getattr(o, "side", None),
+                        getattr(o, "price", None),
+                        getattr(o, "qty", None),
+                        o.__class__.__name__,  # "LimitOrder", "IOCOrder", etc.
+                    )
+                )
             snap.append((price, tuple(orders)))
         return tuple(snap)
 
@@ -389,5 +394,5 @@ class OrderBook:
     def __eq__(self, other):
         if not isinstance(other, OrderBook):
             return NotImplemented
-        
+
         return self.snapshot() == other.snapshot()

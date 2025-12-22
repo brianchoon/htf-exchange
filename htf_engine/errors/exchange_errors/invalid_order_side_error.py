@@ -9,5 +9,7 @@ class InvalidOrderSideError(InvalidOrderError):
         super().__init__()
 
     def default_message(self) -> str:
-        return self.header_string() + f"Invalid order side {self.order_side} received. Must be 'buy' or 'sell'."
-    
+        return (
+            self.header_string()
+            + f"Invalid order side {self.order_side} received. Must be 'buy' or 'sell'."
+        )

@@ -12,5 +12,7 @@ class OrderExceedsPositionLimitError(RejectedOrderError):
         super().__init__()
 
     def default_message(self) -> str:
-        return self.header_string() + f"Cannot place {self.side} order for {self.qty}x {self.inst} as it exceeds the quota of {self.quota[f"{self.side}_quota"]}."
-    
+        return (
+            self.header_string()
+            + f"Cannot place {self.side} order for {self.qty}x {self.inst} as it exceeds the quota of {self.quota[f'{self.side}_quota']}."
+        )

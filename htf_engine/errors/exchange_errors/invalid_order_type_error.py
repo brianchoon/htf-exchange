@@ -10,4 +10,3 @@ class InvalidOrderTypeError(InvalidOrderError):
 
     def default_message(self) -> str:
         return self.header_string() + f"Invalid order type {self.order_type} received."
-    

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from .user_action import UserAction
 
+
 @dataclass(frozen=True)
 class ModifyOrderAction(UserAction):
     order_id: str

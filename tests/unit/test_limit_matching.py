@@ -48,7 +48,7 @@ class TestLimitOrderOperations:
         assert ob.best_ask() == 104
         # Add a lower ask
         ob.add_order("limit", "sell", 7, 102)
-        assert ob.best_ask() == 102  
+        assert ob.best_ask() == 102
 
 
 class TestLimitOrderMatching:
@@ -144,7 +144,9 @@ class TestLimitOrderMatching:
         ob.add_order("limit", "sell", 4, 105)
         ob.add_order("limit", "sell", 2, 110)
 
-        oid_buy = ob.add_order("limit", "buy", 20, 110)  # consumes 4@105 + 2@110 => 6 filled
+        oid_buy = ob.add_order(
+            "limit", "buy", 20, 110
+        )  # consumes 4@105 + 2@110 => 6 filled
 
         assert ob.best_ask() is None
         assert ob.best_bid() == 110
@@ -162,7 +164,7 @@ class TestLimitOrderMatching:
         ob.add_order("limit", "sell", 10, 99)
         ob.add_order("limit", "buy", 10, 99)
         assert ob.last_price == 99
-    
+
     def test_large_imbalance_same_price(self, ob):
         """Many same-price orders get matched FIFO; remainder rests."""
         # 3 buys of 10 @ 100 => 30 bid qty

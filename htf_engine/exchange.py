@@ -18,8 +18,8 @@ class Exchange:
     balance: float
 
     def __init__(self, fee: float = 0):
-        self.users = {}          # user_id -> User
-        self.order_books = {}    # instrument -> OrderBook
+        self.users = {}  # user_id -> User
+        self.order_books = {}  # instrument -> OrderBook
         self.fee = fee
         self.balance = 0
 
@@ -38,47 +38,45 @@ class Exchange:
     def add_order_book(self, instrument: str, ob: OrderBook) -> None:
         self.order_books[instrument] = ob
         ob.on_trade_callback = lambda trade: self.process_trade(trade, ob.instrument)
-        ob.cleanup_discarded_order_callback = lambda order: self.cleanup_discarded_order(order, ob.instrument)
+        ob.cleanup_discarded_order_callback = (
+            lambda order: self.cleanup_discarded_order(order, ob.instrument)
+        )
 
     def place_order(
-            self,
-            user_id: str,
-            instrument: str,
-            order_type: str,
-            side: str,
-            qty: int,
-            price: Optional[float] = None
+        self,
+        user_id: str,
+        instrument: str,
+        order_type: str,
+        side: str,
+        qty: int,
+        price: Optional[float] = None,
     ) -> str:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         if instrument not in self.order_books:
             raise InstrumentNotFoundError(instrument)
-        
+
         ob = self.order_books[instrument]
         order_id = ob.add_order(
-            order_type=order_type,
-            side=side,
-            qty=qty,
-            price=price,
-            user_id=user_id
+            order_type=order_type, side=side, qty=qty, price=price, user_id=user_id
         )
         return order_id
 
     def modify_order(
-            self,
-            user_id: str,
-            instrument: str,
-            order_id: str,
-            new_qty: int,
-            new_price: float
-    ) -> str: 
+        self,
+        user_id: str,
+        instrument: str,
+        order_id: str,
+        new_qty: int,
+        new_price: float,
+    ) -> str:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
-        if instrument not in self.order_books: 
+
+        if instrument not in self.order_books:
             raise InstrumentNotFoundError(instrument)
-        
+
         ob = self.order_books[instrument]
         if order_id not in ob.order_map:
             print("Order not found in order book!")
@@ -87,50 +85,45 @@ class Exchange:
         prev_order = ob.order_map[order_id]
         qty_change = new_qty - prev_order.qty
         new_order_id = ob.modify_order(order_id, new_qty, new_price)
-        
-        # Update outstanding 
+
+        # Update outstanding
         if prev_order.side == "buy":
             if qty_change > 0:
                 self.users[user_id].increase_outstanding_buys(instrument, qty_change)
 
             if qty_change < 0:
                 self.users[user_id].reduce_outstanding_buys(instrument, -qty_change)
-        
+
         if prev_order.side == "sell":
             if qty_change > 0:
                 self.users[user_id].increase_outstanding_sells(instrument, qty_change)
 
             if qty_change < 0:
                 self.users[user_id].reduce_outstanding_sells(instrument, -qty_change)
-        
+
         return new_order_id
-    
-    def cancel_order(
-            self,
-            user_id: str, 
-            instrument: str, 
-            order_id: str
-    ) -> bool:
+
+    def cancel_order(self, user_id: str, instrument: str, order_id: str) -> bool:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-            
+
         if instrument not in self.order_books:
             raise InstrumentNotFoundError(instrument)
-        
+
         ob = self.order_books[instrument]
 
         if order_id not in ob.order_map:
             print("Order not found in order book!")
             return False
-        
+
         order = ob.order_map[order_id]
-        
+
         # Remove from user's outstanding
         if order.side == "buy":
             self.users[user_id].reduce_outstanding_buys(instrument, order.qty)
         else:
             self.users[user_id].reduce_outstanding_sells(instrument, order.qty)
-        
+
         # Cancel in order book
         return ob.cancel_order(order_id)
 
@@ -144,13 +137,13 @@ class Exchange:
         if sell_user:
             sell_user.update_positions_and_cash_balance(trade, instrument, self.fee)
             self._earn_fee()
-    
+
     def cleanup_discarded_order(self, order: Order, instrument: str) -> None:
         user_id = order.user_id
 
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         user = self.users[user_id]
 
         if order.is_buy_order():
@@ -160,17 +153,16 @@ class Exchange:
 
     def _earn_fee(self) -> None:
         self.balance += self.fee
-    
+
     def change_fee(self, new_fee: float) -> None:
         self.fee = new_fee
-    
 
     # GET Operations (for API)
-        
+
     def get_user_positions(self, user_id: str) -> dict:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         user = self.users[user_id]
 
         user_positions = user.get_positions()
@@ -179,32 +171,28 @@ class Exchange:
     def get_user_cash_balance(self, user_id: str) -> float:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         user = self.users[user_id]
-        
+
         user_cash_balance = user.get_cash_balance()
         return user_cash_balance
 
     def get_user_realised_pnl(self, user_id: str) -> float:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         user = self.users[user_id]
-        
+
         user_realised_pnl = user.get_realised_pnl()
         return user_realised_pnl
 
-    def get_user_unrealised_pnl_for_inst(
-            self,
-            user_id: str,
-            inst: str
-    ) -> float:
+    def get_user_unrealised_pnl_for_inst(self, user_id: str, inst: str) -> float:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
-        if inst not in self.order_books: 
+
+        if inst not in self.order_books:
             raise InstrumentNotFoundError(inst)
-        
+
         user = self.users[user_id]
 
         if inst not in user.positions:
@@ -231,18 +219,14 @@ class Exchange:
             user_unrealised_pnl += self.get_user_unrealised_pnl_for_inst(user_id, inst)
 
         return user_unrealised_pnl
-    
-    def get_user_exposure_for_inst(
-            self,
-            user_id: str, 
-            inst: str
-        ) -> float:
+
+    def get_user_exposure_for_inst(self, user_id: str, inst: str) -> float:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
-        if inst not in self.order_books: 
+
+        if inst not in self.order_books:
             raise InstrumentNotFoundError(inst)
-        
+
         user = self.users[user_id]
 
         if inst not in user.positions:
@@ -257,7 +241,7 @@ class Exchange:
         # Exposure is always positive regardless of long or short
         user_exposure_for_inst = abs(qty) * ob.last_price
         return user_exposure_for_inst
-    
+
     def get_user_exposure(self, user_id: str) -> float:
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
@@ -267,13 +251,11 @@ class Exchange:
 
         for inst in user.positions:
             user_exposure += self.get_user_exposure_for_inst(user_id, inst)
-        
+
         return user_exposure
-    
+
     def get_user_remaining_quota_for_inst(
-            self,
-            user_id: str,
-            inst: str
+        self, user_id: str, inst: str
     ) -> dict[str, int]:
         """
         Returns how much more the user can buy or sell for a given instrument
@@ -287,20 +269,16 @@ class Exchange:
         """
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
-        if inst not in self.order_books: 
+
+        if inst not in self.order_books:
             raise InstrumentNotFoundError(inst)
-        
+
         user = self.users[user_id]
 
         user_remaining_quota_for_inst = user.get_remaining_quota(inst)
         return user_remaining_quota_for_inst
-    
-    def get_L1_data(
-            self,
-            user_id: str,
-            inst: str
-    ) -> dict[str, Any]:
+
+    def get_L1_data(self, user_id: str, inst: str) -> dict[str, Any]:
         """
         Level 1 (Top-of-Book) market data.
 
@@ -323,7 +301,7 @@ class Exchange:
         """
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         if inst not in self.order_books:
             raise InstrumentNotFoundError(inst)
 
@@ -333,12 +311,22 @@ class Exchange:
         best_ask = ob.best_ask()
 
         best_bid_qty = (
-            sum(o.qty for o in ob.bids[best_bid] if o.order_id not in ob.cancelled_orders)
-            if best_bid is not None else 0
+            sum(
+                o.qty
+                for o in ob.bids[best_bid]
+                if o.order_id not in ob.cancelled_orders
+            )
+            if best_bid is not None
+            else 0
         )
         best_ask_qty = (
-            sum(o.qty for o in ob.asks[best_ask] if o.order_id not in ob.cancelled_orders)
-            if best_ask is not None else 0
+            sum(
+                o.qty
+                for o in ob.asks[best_ask]
+                if o.order_id not in ob.cancelled_orders
+            )
+            if best_ask is not None
+            else 0
         )
 
         return {
@@ -352,12 +340,7 @@ class Exchange:
             "timestamp": ob.last_time if ob.last_time else None,
         }
 
-    def get_L2_data(
-            self,
-            user_id: str,
-            inst: str,
-            depth: int = 5
-    ) -> dict[str, Any]:
+    def get_L2_data(self, user_id: str, inst: str, depth: int = 5) -> dict[str, Any]:
         """
         Level 2 (Market Depth) data.
 
@@ -379,17 +362,15 @@ class Exchange:
         """
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         user = self.users[user_id]
         user_permission_level = user.get_permission_level()
 
         if user_permission_level < 2:
             raise PermissionDeniedError(
-                user_id=user_id,
-                required_level=2,
-                actual_level=user_permission_level
+                user_id=user_id, required_level=2, actual_level=user_permission_level
             )
-        
+
         if inst not in self.order_books:
             raise InstrumentNotFoundError(inst)
 
@@ -399,14 +380,12 @@ class Exchange:
             levels = []
             for price in sorted(side_dict.keys(), reverse=reverse)[:depth]:
                 total_qty = sum(
-                    o.qty for o in ob.bids[price]
+                    o.qty
+                    for o in ob.bids[price]
                     if o.order_id not in ob.cancelled_orders
                 )
                 if total_qty > 0:
-                    levels.append({
-                        "price": price,
-                        "quantity": total_qty
-                    })
+                    levels.append({"price": price, "quantity": total_qty})
             return levels
 
         return {
@@ -415,12 +394,7 @@ class Exchange:
             "asks": serialize_side(ob.asks, reverse=False),
         }
 
-    def get_L3_data(
-            self,
-            user_id: str,
-            inst: str,
-            depth: int = 5
-    ) -> dict[str, Any]:
+    def get_L3_data(self, user_id: str, inst: str, depth: int = 5) -> dict[str, Any]:
         """
         Level 3 (Order-Level) market data.
 
@@ -466,17 +440,15 @@ class Exchange:
         """
         if user_id not in self.users:
             raise UserNotFoundError(user_id)
-        
+
         user = self.users[user_id]
         user_permission_level = user.get_permission_level()
 
         if user_permission_level < 3:
             raise PermissionDeniedError(
-                user_id=user_id,
-                required_level=3,
-                actual_level=user_permission_level
+                user_id=user_id, required_level=3, actual_level=user_permission_level
             )
-        
+
         if inst not in self.order_books:
             raise InstrumentNotFoundError(inst)
 
@@ -490,20 +462,19 @@ class Exchange:
                 for o in side_dict[price]:
                     if o.order_id in ob.cancelled_orders:
                         continue
-                    orders.append({
-                        "order_id": o.order_id,
-                        "qty": o.qty,
-                        "user_id": o.user_id,
-                        "order_type": o.__class__.__name__,
-                        "timestamp": o.timestamp,
-                    })
-                    
+                    orders.append(
+                        {
+                            "order_id": o.order_id,
+                            "qty": o.qty,
+                            "user_id": o.user_id,
+                            "order_type": o.__class__.__name__,
+                            "timestamp": o.timestamp,
+                        }
+                    )
+
                 if orders:
-                    levels.append({
-                        "price": price,
-                        "orders": orders
-                    })
-                    
+                    levels.append({"price": price, "orders": orders})
+
             return levels
 
         return {

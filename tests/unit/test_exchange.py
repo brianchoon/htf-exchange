@@ -1,7 +1,9 @@
 from collections import defaultdict
 import pytest
 
-from htf_engine.errors.exchange_errors.permission_denied_error import PermissionDeniedError
+from htf_engine.errors.exchange_errors.permission_denied_error import (
+    PermissionDeniedError,
+)
 
 
 class TestExchange:
@@ -10,13 +12,13 @@ class TestExchange:
         bids = defaultdict(int)
         asks = defaultdict(int)
 
-        for price, orders in snap['bids']:
+        for price, orders in snap["bids"]:
             bids[price] = sum(o[3] for o in orders)  # o[3] is qty
-        for price, orders in snap['asks']:
+        for price, orders in snap["asks"]:
             asks[price] = sum(o[3] for o in orders)
-        
-        return bids, asks, snap['last_price'], snap['last_quantity']
-        
+
+        return bids, asks, snap["last_price"], snap["last_quantity"]
+
     def test_exchange(self, exchange, u1, u2, u3):
         assert "Stock A" in exchange.order_books
         ob_A = exchange.order_books["Stock A"]
@@ -85,8 +87,11 @@ class TestExchange:
         # u1 should fail
         with pytest.raises(PermissionDeniedError) as e1:
             exchange.get_L2_data(u1.user_id, inst)
-            
-        assert str(e1.value) == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=2, actual=1)."
+
+        assert (
+            str(e1.value)
+            == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=2, actual=1)."
+        )
 
         # u2 should succeed
         data2 = exchange.get_L2_data(u2.user_id, inst)
@@ -103,13 +108,19 @@ class TestExchange:
         with pytest.raises(PermissionDeniedError) as e1:
             exchange.get_L3_data(u1.user_id, inst)
 
-        assert str(e1.value) == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=3, actual=1)."
+        assert (
+            str(e1.value)
+            == "[PERMISSION_DENIED] User 'ceo_of_fumbling' does not have sufficient permissions (required=3, actual=1)."
+        )
 
         # u2 fails
         with pytest.raises(PermissionDeniedError) as e2:
             exchange.get_L3_data(u2.user_id, inst)
 
-        assert str(e2.value) == "[PERMISSION_DENIED] User 'cheater6767' does not have sufficient permissions (required=3, actual=2)."
+        assert (
+            str(e2.value)
+            == "[PERMISSION_DENIED] User 'cheater6767' does not have sufficient permissions (required=3, actual=2)."
+        )
 
         # u3 succeeds
         data3 = exchange.get_L3_data(u3.user_id, inst)

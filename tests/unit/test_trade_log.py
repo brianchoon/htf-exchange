@@ -1,8 +1,11 @@
 import pytest
 from datetime import timezone
 
-from htf_engine.errors.exchange_errors.invalid_aggressor_error import InvalidAggressorError
+from htf_engine.errors.exchange_errors.invalid_aggressor_error import (
+    InvalidAggressorError,
+)
 from htf_engine.trades.trade import Trade
+
 
 class TestTradeLog:
     def test_record_valid_trade(self, trade_log):
@@ -13,7 +16,7 @@ class TestTradeLog:
             sell_user_id="user2",
             buy_order_id="order1",
             sell_order_id="order2",
-            aggressor="buy"
+            aggressor="buy",
         )
         assert isinstance(trade, Trade)
         assert trade.price == 100.5
@@ -35,9 +38,12 @@ class TestTradeLog:
                 sell_user_id="user2",
                 buy_order_id="order1",
                 sell_order_id="order2",
-                aggressor="hold"
+                aggressor="hold",
             )
-        assert str(e1.value) == "[INVALID_AGGRESSOR] Invalid aggressor hold received. Must be 'buy' or 'sell'."
+        assert (
+            str(e1.value)
+            == "[INVALID_AGGRESSOR] Invalid aggressor hold received. Must be 'buy' or 'sell'."
+        )
 
     def test_retrieve_simple_log(self, trade_log):
         trade_log.record(
@@ -47,9 +53,9 @@ class TestTradeLog:
             sell_user_id="u2",
             buy_order_id="oid1",
             sell_order_id="oid2",
-            aggressor="sell"
+            aggressor="sell",
         )
-        
+
         trade_log.record(
             price=200,
             qty=1,
@@ -57,7 +63,7 @@ class TestTradeLog:
             sell_user_id="u4",
             buy_order_id="oid3",
             sell_order_id="oid4",
-            aggressor="buy"
+            aggressor="buy",
         )
 
         trade_log.record(
@@ -67,7 +73,7 @@ class TestTradeLog:
             sell_user_id="u6",
             buy_order_id="oid5",
             sell_order_id="oid6",
-            aggressor="sell"
+            aggressor="sell",
         )
 
         simple_log = trade_log.retrieve_simple_log()
@@ -98,7 +104,7 @@ class TestTradeLog:
             sell_user_id="s1",
             buy_order_id="o1",
             sell_order_id="o2",
-            aggressor="buy"
+            aggressor="buy",
         )
 
         trade_log.record(
@@ -108,25 +114,27 @@ class TestTradeLog:
             sell_user_id="s3",
             buy_order_id="o3",
             sell_order_id="o4",
-            aggressor="sell"
+            aggressor="sell",
         )
 
         log_str = str(trade_log)
 
         assert isinstance(log_str, str)
-        
+
         log_strs = log_str.split("\n")
-        
+
         assert "b1" in log_strs[0]
         assert "s1" in log_strs[0]
         assert "o1" in log_strs[0]
         assert "o2" in log_strs[0]
-        assert "BUY" in log_strs[0]         # Must be in CAPS, otherwise it will always return true due to buy_uid and buy_oid
+        assert (
+            "BUY" in log_strs[0]
+        )  # Must be in CAPS, otherwise it will always return true due to buy_uid and buy_oid
         assert "b3" not in log_strs[0]
         assert "s3" not in log_strs[0]
         assert "o3" not in log_strs[0]
         assert "o4" not in log_strs[0]
-        assert "SELL" not in log_strs[0]    # Must be in CAPS, same reason as above
+        assert "SELL" not in log_strs[0]  # Must be in CAPS, same reason as above
 
         assert "b3" in log_strs[1]
         assert "s3" in log_strs[1]
