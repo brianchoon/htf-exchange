@@ -7,8 +7,8 @@ class TestOrderInitialisation:
     def test_limit_order_creation(self):
         """Test limit order creation."""
         timestamp = datetime.now(timezone.utc)
-        order = LimitOrder(order_id=1, side="buy", price=100, qty=10, user_id=None, timestamp=timestamp)
-        assert order.order_id == 1
+        order = LimitOrder(order_id="1", side="buy", price=100, qty=10, user_id="u1", timestamp=str(timestamp))
+        assert order.order_id == "1"
         assert order.side == "buy"
         assert order.price == 100
         assert order.qty == 10
@@ -18,8 +18,8 @@ class TestOrderInitialisation:
     def test_market_order_creation(self):
         """Test market order creation."""
         timestamp = datetime.now(timezone.utc)
-        order = MarketOrder(order_id=2, side="sell", qty=5, user_id=None, timestamp=timestamp)
-        assert order.order_id == 2
+        order = MarketOrder(order_id="2", side="sell", qty=5, user_id="u1", timestamp=str(timestamp)) 
+        assert order.order_id == "2"
         assert order.side == "sell"
         assert order.qty == 5
         assert not order.is_buy_order()
@@ -29,17 +29,17 @@ class TestOrderInitialisation:
         """Test that zero quantity raises ValueError."""
         timestamp = datetime.now(timezone.utc)
         with pytest.raises(ValueError, match="Order quantity must be > 0"):
-            LimitOrder(1, "buy", 100, 0, user_id=None, timestamp=timestamp)
+            LimitOrder("1", "buy", 100, 0, user_id="u1", timestamp=str(timestamp))
         with pytest.raises(ValueError, match="Order quantity must be > 0"):
-            MarketOrder(1, "buy", 0, user_id=None, timestamp=timestamp)
+            MarketOrder("1", "buy", 0, user_id="u1", timestamp=str(timestamp))
 
     def test_invalid_order_quantity_negative(self):
         """Test that negative quantity raises ValueError."""
         timestamp = datetime.now(timezone.utc)
         with pytest.raises(ValueError, match="Order quantity must be > 0"):
-            LimitOrder(1, "buy", 100, -5, user_id=None, timestamp=timestamp)
+            LimitOrder("1", "buy", 100, -5, user_id="u1", timestamp=str(timestamp))
         with pytest.raises(ValueError, match="Order quantity must be > 0"):
-            MarketOrder(1, "buy", -5, user_id=None, timestamp=timestamp)
+            MarketOrder(1, "buy", -5, user_id="u1", timestamp=str(timestamp))
     
 def test_stop_limit_buy_order_creation(ob):
     oid = ob.add_order("stop-limit", "buy", 10, price = 100, user_id=None, stop_price=200)
