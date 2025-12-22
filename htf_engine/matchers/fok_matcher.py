@@ -29,6 +29,7 @@ class FOKOrderMatcher(Matcher):
             if price_cmp(price)
         )
 
+        # Kill the order as there is insufficient liquidity for immediate execution
         if available_qty < order.qty:
             order_book.cleanup_discarded_order(order)
             raise FOKInsufficientLiquidityError()

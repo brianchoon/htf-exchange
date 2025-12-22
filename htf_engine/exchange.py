@@ -486,6 +486,7 @@ class Exchange:
             levels = []
             for price in sorted(side_dict.keys(), reverse=reverse)[:depth]:
                 orders = []
+
                 for o in side_dict[price]:
                     if o.order_id in ob.cancelled_orders:
                         continue
@@ -496,11 +497,13 @@ class Exchange:
                         "order_type": o.__class__.__name__,
                         "timestamp": o.timestamp,
                     })
+                    
                 if orders:
                     levels.append({
                         "price": price,
                         "orders": orders
                     })
+                    
             return levels
 
         return {

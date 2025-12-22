@@ -84,14 +84,22 @@ class Matcher:
                 book[best_price].popleft()
                 del order_book.order_map[resting_order.order_id]
                 heapq.heappop(best_prices_heap)
+                
                 if not book[best_price]:
                     del book[best_price]
+            
+            # Since a trade has been executed, last price has (potentially) moved, so we need to check stop orders
             order_book.check_stop_orders()
 
         if order.qty > 0 and place_leftover_fn:
             place_leftover_fn(order_book, order)
 
-    def _would_self_trade(self, order_book, incoming_order, price_cmp) -> bool:
+    def _would_self_trade(
+            self,
+            order_book,
+            incoming_order,
+            price_cmp
+    ) -> bool:
         if not order_book.enable_stp:
             return False
         

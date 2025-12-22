@@ -88,7 +88,7 @@ class User:
         if self.place_order_callback is None:
             raise RuntimeError("User must be registered before placing orders!")
         
-        # --- CHECK LIMIT ---
+        # --- CHECK USER POSITION LIMITS ---
         if not self._can_place_order(instrument, side, qty):
             raise OrderExceedsPositionLimitError(
                 inst=instrument,
@@ -97,14 +97,30 @@ class User:
                 quota=self.get_remaining_quota(instrument)
             )
         
-        # --- UPDATE OUTSTANDING ---
+        # --- UPDATE OUTSTANDING BUYS/SELLS ---
         if side == "buy":
             self.increase_outstanding_buys(instrument, qty)
         else:
             self.increase_outstanding_sells(instrument, qty)
+        
         # Place order
-        order_id = self.place_order_callback(self.user_id, instrument, order_type, side, qty, price)
-        self.user_log.record_place_order(instrument, order_type, side, qty, price)
+        order_id = self.place_order_callback(
+            self.user_id,
+            instrument,
+            order_type,
+            side,
+            qty,
+            price
+        )
+
+        # Record the order in the log
+        self.user_log.record_place_order(
+            instrument,
+            order_type,
+            side,
+            qty,
+            price
+        )
 
         return order_id
 
@@ -169,6 +185,7 @@ class User:
                 new_avg = old_avg if new_qty < 0 else price
 
             cash_delta = qty * price
+
             self._decrease_cash_balance(cash_delta)
             self._decrease_cash_balance(exchange_fee)
 
@@ -188,6 +205,7 @@ class User:
                 new_avg = old_avg if new_qty > 0 else price
 
             cash_delta = qty * price
+
             self._increase_cash_balance(cash_delta)
             self._decrease_cash_balance(exchange_fee)
 
