@@ -9,5 +9,7 @@ class InvalidOrderQuantityError(InvalidOrderError):
         super().__init__()
 
     def default_message(self) -> str:
-        return self.header_string() + f"Order quantity must be positive (received={self.order_quantity})."
-    
+        return (
+            self.header_string()
+            + f"Order quantity must be positive (received={self.order_quantity})."
+        )

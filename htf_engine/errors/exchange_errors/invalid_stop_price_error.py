@@ -9,5 +9,7 @@ class InvalidStopPriceError(InvalidOrderError):
         super().__init__()
 
     def default_message(self) -> str:
-        return self.header_string() + f"Stop price {"less" if self.is_buy_order else "greater"} than or equal to last traded price"
-    
+        return (
+            self.header_string()
+            + f"Stop price {'less' if self.is_buy_order else 'greater'} than or equal to last traded price"
+        )

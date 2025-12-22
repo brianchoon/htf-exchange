@@ -10,5 +10,7 @@ class SelfTradePreventionError(RejectedOrderError):
         super().__init__()
 
     def default_message(self) -> str:
-        return self.header_string() + f"STP triggered: cancelling order {self.order_id} from User {self.user_id}"
-    
+        return (
+            self.header_string()
+            + f"STP triggered: cancelling order {self.order_id} from User {self.user_id}"
+        )

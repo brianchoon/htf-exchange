@@ -1,5 +1,6 @@
 from htf_engine.order_book import OrderBook
 
+
 class TestOwnImplementation:
     def test_own_testcase(self, ob):
         """Try your own test cases, for differnt scenarios, market orders etc."""
@@ -25,7 +26,7 @@ class TestOwnImplementation:
         #                         TEST SOME EVENT
         ob.add_order("fok", "sell", 20, 100)
         # ========================================================
-        
+
         # This is the expected that should pass your test case
         expected = OrderBook("GOOG")
         for args in [
@@ -36,10 +37,10 @@ class TestOwnImplementation:
             ("limit", "sell", 1, 100),
             ("limit", "sell", 1, 100),
             ("limit", "sell", 1, 100),
-            ("fok",   "sell", 20, 100),
+            ("fok", "sell", 20, 100),
         ]:
             expected.add_order(*args)
-            
+
         # ---- Assert (state equality) ----
         assert ob == expected
 
