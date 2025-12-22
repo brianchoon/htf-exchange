@@ -655,12 +655,11 @@ class TestExchange:
         assert u3.get_remaining_quota(inst) == {"buy_quota": 50, "sell_quota": 120}
 
         # User 2 tries to FOK buy another 50 Stock A at $101 (but it is rejected, as there are only 30 shares of ask liquidity <= $101)
-        with pytest.raises(FOKInsufficientLiquidityError) as e2:
+        with pytest.raises(FOKInsufficientLiquidityError) as e5:
             u2.place_order(inst, "fok", "buy", 50, 101)
-            print(e2)
 
         assert (
-            str(e2.value)
+            str(e5.value)
             == "[FOK_INSUFFICIENT_LIQUIDITY] Rejected Order: FOK order had insufficient liquidity and was rejected."
         )
 
