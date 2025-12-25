@@ -7,6 +7,7 @@ import heapq
 import itertools
 
 from .errors.exchange_errors.invalid_order_type_error import InvalidOrderTypeError
+from .errors.exchange_errors.order_book_not_found_error import OrderBookNotFoundError
 from .matchers.fok_matcher import FOKOrderMatcher
 from .matchers.ioc_matcher import IOCOrderMatcher
 from .matchers.limit_matcher import LimitOrderMatcher
@@ -303,7 +304,7 @@ class OrderBook:
 
     def cleanup_discarded_order(self, order: Order) -> None:
         if self.cleanup_discarded_order_callback is None:
-            raise RuntimeError("Order Book does not belong to an exchange!")
+            raise OrderBookNotFoundError(self.instrument)
 
         self.cleanup_discarded_order_callback(order)
 

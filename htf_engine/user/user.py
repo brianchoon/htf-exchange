@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Any, Callable, Dict, Optional
 
+from htf_engine.errors.exchange_errors.user_not_found_error import UserNotFoundError
 from htf_engine.errors.exchange_errors.order_exceeds_position_limit_error import (
     OrderExceedsPositionLimitError,
 )
@@ -83,7 +84,7 @@ class User:
         price: Optional[float] = None,
     ) -> str:
         if self.place_order_callback is None:
-            raise RuntimeError("User must be registered before placing orders!")
+            raise UserNotFoundError(self.user_id)
 
         # --- CHECK USER POSITION LIMITS ---
         if not self._can_place_order(instrument, side, qty):
@@ -112,7 +113,7 @@ class User:
 
     def cancel_order(self, order_id: str, instrument: str) -> bool:
         if self.cancel_order_callback is None:
-            raise RuntimeError("User must be registered before cancelling orders!")
+            raise UserNotFoundError(self.user_id)
 
         try:
             self.cancel_order_callback(self.user_id, instrument, order_id)
@@ -125,7 +126,7 @@ class User:
         self, instrument_id: str, order_id: str, new_qty: int, new_price: float
     ) -> bool:
         if self.modify_order_callback is None:
-            raise RuntimeError("User must be registered before modifying orders!")
+            raise UserNotFoundError(self.user_id)
 
         try:
             self.modify_order_callback(
