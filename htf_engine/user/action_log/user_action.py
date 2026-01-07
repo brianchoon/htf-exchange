@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
 
 
@@ -13,3 +13,9 @@ class UserAction:
         ts = self.timestamp.isoformat().replace("+00:00", "Z")
 
         return f"{ts} | {self.user_id} | {self.username} | {self.action}"
+
+    def to_dict(self):
+        data = asdict(self)
+
+        data["timestamp"] = self.timestamp.isoformat()
+        return data

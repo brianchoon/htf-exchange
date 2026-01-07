@@ -64,6 +64,7 @@ class UserLog:
         side: str,
         quantity: int,
         price: Optional[float],
+        stop_price: Optional[float],
     ) -> None:
         action = PlaceOrderAction(
             timestamp=self._get_now(),
@@ -75,6 +76,7 @@ class UserLog:
             side=side,
             quantity=quantity,
             price=price,
+            stop_price=stop_price,
         )
 
         self._actions.append(action)
@@ -130,6 +132,9 @@ class UserLog:
         )
 
         self._actions.append(action)
+
+    def get_logs_seriable(self) -> List[dict]:
+        return [action.to_dict() for action in self._actions]
 
     def retrieve_log(self) -> tuple[UserAction, ...]:
         return tuple(self._actions)

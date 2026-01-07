@@ -1,8 +1,17 @@
 import pytest
+from unittest.mock import patch
+import sys
+import os
+
 from htf_engine.exchange import Exchange
 from htf_engine.order_book import OrderBook
 from htf_engine.user.user import User
 from htf_engine.trades.trade_log import TradeLog
+
+from ui.app import app as flask_app
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ROOT_DIR)
 
 
 @pytest.fixture
@@ -43,3 +52,46 @@ def u3():
 @pytest.fixture
 def trade_log():
     return TradeLog()
+
+
+@pytest.fixture
+def brian():
+    """Creates a test user 'brian'."""
+    return User("brian", "Brian", 1_000_000)
+
+
+@pytest.fixture
+def clemen():
+    """Creates a test user 'clemen'."""
+    return User("clemen", "Clemen", 1_000_000)
+
+
+@pytest.fixture
+def apple_book(exchange):
+    """Creates the AAPL order book and adds it to the exchange."""
+    ob = OrderBook("AAPL")
+    exchange.add_order_book("AAPL", ob)
+    return ob
+
+
+@pytest.fixture
+def client(exchange, apple_book, brian, clemen):
+    """
+    Creates a Flask test client with MOCKED globals.
+    This is the most important part.
+    """
+    exchange.register_user(brian)
+    exchange.register_user(clemen)
+
+    test_users_dict = {"brian": brian, "clemen": clemen}
+
+    with (
+        patch("ui.app.exchange", exchange),
+        patch("ui.app.USERS", test_users_dict),
+        patch("ui.app.order_book", apple_book),
+    ):
+        flask_app.config["TESTING"] = True
+
+        # Return the client so tests can make HTTP requests
+        with flask_app.test_client() as client:
+            yield client

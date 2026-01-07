@@ -11,8 +11,9 @@ class PlaceOrderAction(UserAction):
     side: str
     quantity: int
     price: Optional[float]
+    stop_price: Optional[float]
 
     def __str__(self) -> str:
         parent_str = super().__str__()
 
-        return f"{parent_str} | {self.order_type} | {self.side} | {self.quantity} | {self.price} for {self.instrument_id}"
+        return f"{parent_str} | {self.order_type} | {self.side} | {self.quantity} | {self.price} for {self.instrument_id} | {self.stop_price}"
