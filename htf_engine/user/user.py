@@ -120,37 +120,19 @@ class User:
         )
 
         # Record the order in the log
-        self.user_log.record_place_order(instrument, order_type, side, qty, price)
+        self.user_log.record_place_order(
+            instrument, order_type, side, qty, price, stop_price=stop_price
+        )
 
         return order_id
 
-    def cancel_order(self, order_id: str, instrument: str) -> bool:
-        if self.cancel_order_callback is None:
-            raise UserNotFoundError(self.user_id)
+    def record_cancel_order(self, order_id: str, instrument_id: str):
+        self.user_log.record_cancel_order(order_id, instrument_id)
 
-        try:
-            self.cancel_order_callback(self.user_id, instrument, order_id)
-            self.user_log.record_cancel_order(order_id, instrument)
-            return True
-        except ValueError:
-            return False
-
-    def modify_order(
-        self, instrument_id: str, order_id: str, new_qty: int, new_price: float
-    ) -> bool:
-        if self.modify_order_callback is None:
-            raise UserNotFoundError(self.user_id)
-
-        try:
-            self.modify_order_callback(
-                self.user_id, instrument_id, order_id, new_qty, new_price
-            )
-            self.user_log.record_modify_order(
-                order_id, instrument_id, new_qty, self.cash_balance
-            )
-            return True
-        except ValueError:
-            return False
+    def record_modify_order(
+        self, order_id: str, instrument_id: str, new_qty: int, new_price: float
+    ):
+        self.user_log.record_modify_order(order_id, instrument_id, new_qty, new_price)
 
     def update_positions_and_cash_balance(
         self, trade: Trade, instrument: str, exchange_fee: float

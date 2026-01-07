@@ -4,6 +4,8 @@ from .errors.exchange_errors.instrument_not_found_error import InstrumentNotFoun
 from .errors.exchange_errors.permission_denied_error import PermissionDeniedError
 from .errors.exchange_errors.position_not_found_error import PositionNotFoundError
 from .errors.exchange_errors.user_not_found_error import UserNotFoundError
+from .errors.exchange_errors.user_already_exist import UserAlreadyExist
+from .errors.exchange_errors.order_not_found_error import OrderNotFoundError
 
 from .order_book import OrderBook
 from .user.user import User
@@ -26,14 +28,11 @@ class Exchange:
 
     def register_user(self, user: User, permission_level=1) -> bool:
         if user.user_id in self.users:
-            print(f"User {user.user_id} is already registered in exchange!")
-            return False
+            raise UserAlreadyExist(user.user_id)
 
         self.users[user.user_id] = user
         user.register(permission_level)
         user.place_order_callback = self.place_order
-        user.cancel_order_callback = self.cancel_order
-        user.modify_order_callback = self.modify_order
         return True
 
     def add_order_book(self, instrument: str, ob: OrderBook) -> None:
@@ -95,8 +94,7 @@ class Exchange:
 
         ob = self.order_books[instrument]
         if order_id not in ob.order_map:
-            print("Order not found in order book!")
-            return "False"
+            raise OrderNotFoundError(order_id)
 
         prev_order = ob.order_map[order_id]
         qty_change = new_qty - prev_order.qty
@@ -117,6 +115,9 @@ class Exchange:
             if qty_change < 0:
                 self.users[user_id].reduce_outstanding_sells(instrument, -qty_change)
 
+        self.users[user_id].record_modify_order(
+            order_id, instrument, new_qty, new_price
+        )
         return new_order_id
 
     def cancel_order(self, user_id: str, instrument: str, order_id: str) -> bool:
@@ -129,8 +130,7 @@ class Exchange:
         ob = self.order_books[instrument]
 
         if order_id not in ob.order_map:
-            print("Order not found in order book!")
-            return False
+            raise OrderNotFoundError(order_id)
 
         order = ob.order_map[order_id]
 
@@ -141,6 +141,7 @@ class Exchange:
             self.users[user_id].reduce_outstanding_sells(instrument, order.qty)
 
         # Cancel in order book
+        self.users[user_id].record_cancel_order(order_id, instrument)
         return ob.cancel_order(order_id)
 
     def process_trade(self, trade: Trade, instrument: str) -> None:
@@ -294,7 +295,7 @@ class Exchange:
         user_remaining_quota_for_inst = user.get_remaining_quota(inst)
         return user_remaining_quota_for_inst
 
-    def get_L1_data(self, user_id: str, inst: str) -> dict[str, Any]:
+    def get_L1_data(self, user_id: str, inst: str, depth: int = 5) -> dict[str, Any]:
         """
         Level 1 (Top-of-Book) market data.
 
@@ -469,6 +470,13 @@ class Exchange:
             raise InstrumentNotFoundError(inst)
 
         ob = self.order_books[inst]
+
+        def user_get_exchange_data(
+            user_id: str, inst: str, depth: int = 5
+        ) -> dict[str, Any]:
+            user = self.users[user_id]
+            func_dict = {1: self.get_L1_data, 2: self.get_L2_data, 3: self.get_L3_data}
+            return func_dict[user.get_permission_level()](user_id, inst)
 
         def serialize_side(side_dict, reverse=False):
             levels = []
